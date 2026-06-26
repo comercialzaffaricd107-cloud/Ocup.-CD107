@@ -1,0 +1,1501 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Posição de Endereços — CD 107</title>
+<style>
+  :root{
+    --bg: #1e3a5f;
+    --bg-panel: #234468;
+    --bg-panel-raised: #2a4d74;
+    --line: #36608f;
+    --line-soft: #2d5580;
+    --ink: #eef3f9;
+    --ink-dim: #aec3da;
+    --ink-faint: #7d9bbd;
+    --amber: #f0a83c;
+    --amber-dim: #4a3a23;
+    --green: #5fc28a;
+    --green-dim: #1f4438;
+    --red: #ef7763;
+    --red-dim: #4a2a28;
+    --blue: #6fb1e8;
+    --blue-dim: #234d6e;
+    --violet: #b3a3e8;
+    --mono: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ---------- Top bar ---------- */
+  .topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    padding:14px 22px;
+    background: linear-gradient(180deg, #234468 0%, #1e3a5f 100%);
+    border-bottom:1px solid var(--line);
+    position:sticky;
+    top:0;
+    z-index:50;
+    flex-wrap:wrap;
+  }
+  .brand{ display:flex; align-items:center; gap:14px; }
+  .brand-mark{
+    height:42px; width:auto;
+    display:block;
+    flex-shrink:0;
+  }
+  .brand-text h1{ font-size:15px; margin:0; font-weight:600; letter-spacing:0.2px; }
+  .brand-text .sub{
+    font-family:var(--mono); font-size:11px; color:var(--ink-faint);
+    letter-spacing:0.5px; text-transform:uppercase;
+  }
+
+  .status-strip{
+    display:flex; align-items:center; gap:18px;
+    font-family:var(--mono); font-size:11.5px; color:var(--ink-dim);
+  }
+  .status-strip .dot{
+    display:inline-block;width:7px;height:7px;border-radius:50%;
+    margin-right:6px; background:var(--ink-faint);
+  }
+  .status-strip .dot.live{ background:var(--green); box-shadow:0 0 0 0 rgba(95,194,138,.6); animation:pulse 2s infinite; }
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 0 rgba(95,194,138,.45);}
+    70%{box-shadow:0 0 0 6px rgba(95,194,138,0);}
+    100%{box-shadow:0 0 0 0 rgba(95,194,138,0);}
+  }
+
+  .btn{
+    font-family:var(--mono); font-size:12px; font-weight:600; letter-spacing:0.3px;
+    padding:9px 16px; border-radius:6px; border:1px solid var(--line);
+    background:var(--bg-panel-raised); color:var(--ink); cursor:pointer;
+    transition: border-color .15s, background .15s, transform .05s;
+    display:inline-flex; align-items:center; gap:8px;
+  }
+  .btn:hover{ border-color:var(--amber); background:#212b36; }
+  .btn:active{ transform:scale(.98); }
+  .btn-primary{ background: linear-gradient(180deg, #f0a83c, #d6912d); color:#1a1206; border:none; }
+  .btn-primary:hover{ background: linear-gradient(180deg, #f7b455, #e0992f); }
+
+  input[type="file"]{ display:none; }
+
+  /* ---------- Abas ---------- */
+  .tabbar{
+    display:flex;
+    gap:4px;
+    padding:0 22px;
+    background: var(--bg);
+    border-bottom:1px solid var(--line);
+    position:sticky;
+    top:67px;
+    z-index:40;
+  }
+  .tab-btn{
+    font-family:var(--mono);
+    font-size:12.5px;
+    font-weight:600;
+    letter-spacing:0.3px;
+    padding:12px 18px 10px;
+    background:none;
+    border:none;
+    color:var(--ink-faint);
+    cursor:pointer;
+    border-bottom:2px solid transparent;
+    display:flex; align-items:center; gap:7px;
+    transition: color .15s;
+  }
+  .tab-btn:hover{ color:var(--ink-dim); }
+  .tab-btn.active{ color:var(--amber); border-bottom-color:var(--amber); }
+  .tab-btn .tab-icon{ font-size:13px; opacity:.85; }
+  .tab-panel{ display:none; }
+  .tab-panel.active{ display:block; }
+
+  /* ---------- Layout geral ---------- */
+  .shell{ max-width:1480px; margin:0 auto; padding:22px; }
+  .shell-narrow{ max-width:1280px; margin:0 auto; padding:22px; }
+
+  .empty-state{
+    margin-top:60px; text-align:center; padding:60px 20px;
+    border:1px dashed var(--line); border-radius:12px; background: var(--bg-panel);
+  }
+  .empty-state .icon{ font-size:34px; margin-bottom:14px; opacity:.5; }
+  .empty-state h2{ font-size:18px; margin:0 0 8px; font-weight:600; }
+  .empty-state p{ color:var(--ink-dim); font-size:13.5px; margin:0 0 22px; line-height:1.6; }
+
+  /* ---------- KPI cards ---------- */
+  .kpi-row{ display:grid; grid-template-columns:repeat(6,1fr); gap:12px; margin-bottom:18px; }
+  @media (max-width: 1200px){ .kpi-row{ grid-template-columns:repeat(3,1fr); } }
+  @media (max-width: 680px){ .kpi-row{ grid-template-columns:repeat(2,1fr); } }
+
+  .kpi-card{
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:10px;
+    padding:16px 16px 14px; position:relative; overflow:hidden;
+  }
+  .kpi-card::before{ content:''; position:absolute; top:0;left:0;right:0;height:2px; background: var(--accent, var(--amber)); }
+  .kpi-card.c-total::before{ --accent: var(--blue); }
+  .kpi-card.c-ocupado::before{ --accent: var(--green); }
+  .kpi-card.c-disp::before{ --accent: var(--ink-faint); }
+  .kpi-card.c-bloq::before{ --accent: var(--red); }
+  .kpi-card.c-reserv::before{ --accent: var(--violet); }
+  .kpi-card.c-taxa::before{ --accent: var(--amber); }
+
+  .kpi-label{
+    font-family:var(--mono); font-size:10.5px; text-transform:uppercase;
+    letter-spacing:0.6px; color:var(--ink-faint); margin-bottom:8px;
+  }
+  .kpi-value{ font-family:var(--mono); font-size:26px; font-weight:700; line-height:1; color:var(--ink); }
+  .kpi-foot{ font-size:10.5px; color:var(--ink-dim); margin-top:6px; line-height:1.4; font-family:var(--mono); letter-spacing:0.1px; }
+
+  /* ---------- Filtros (aba Detalhado) ---------- */
+  .filters{
+    display:flex; flex-wrap:wrap; gap:10px; align-items:center;
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:10px;
+    padding:12px 14px; margin-bottom:18px;
+  }
+  .filters label{
+    font-family:var(--mono); font-size:10px; text-transform:uppercase;
+    color:var(--ink-faint); letter-spacing:0.5px; display:block; margin-bottom:4px;
+  }
+  .filter-group{ display:flex; flex-direction:column; min-width:150px; }
+  select, input[type="text"]{
+    background:var(--bg-panel-raised); border:1px solid var(--line); color:var(--ink);
+    padding:7px 10px; border-radius:6px; font-family:var(--sans); font-size:13px; outline:none;
+  }
+  select:focus, input[type="text"]:focus{ border-color:var(--amber); }
+  .filter-search{ min-width:220px; flex:1; }
+  .filters .clear-btn{
+    margin-left:auto; font-size:11.5px; color:var(--ink-faint); background:none;
+    border:1px solid var(--line); padding:7px 12px; border-radius:6px; cursor:pointer; font-family:var(--mono);
+  }
+  .filters .clear-btn:hover{ color:var(--ink); border-color:var(--ink-faint); }
+
+  /* ---------- Painéis / grid ---------- */
+  .panel-grid{ display:grid; grid-template-columns: 1.3fr 1fr; gap:16px; margin-bottom:16px; }
+  @media (max-width: 980px){ .panel-grid{ grid-template-columns:1fr; } }
+
+  .panel{ background:var(--bg-panel); border:1px solid var(--line); border-radius:10px; padding:16px; }
+  .panel-title{ font-size:13px; font-weight:600; margin:0 0 2px; display:flex; align-items:center; justify-content:space-between; }
+  .panel-title .tag{ font-family:var(--mono); font-size:10px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:0.4px; }
+  .panel-sub{ font-size:11.5px; color:var(--ink-faint); margin-bottom:14px; }
+
+  /* ---------- Tabela ---------- */
+  table{ width:100%; border-collapse:collapse; font-size:12.5px; }
+  thead th{
+    text-align:left; font-family:var(--mono); font-size:10.5px; text-transform:uppercase;
+    letter-spacing:0.4px; color:var(--ink-faint); padding:8px 10px; border-bottom:1px solid var(--line);
+    cursor:pointer; user-select:none; white-space:nowrap;
+  }
+  thead th:hover{ color:var(--ink); }
+  thead th.sorted-asc::after{ content:' ▲'; font-size:8px; }
+  thead th.sorted-desc::after{ content:' ▼'; font-size:8px; }
+  tbody td{ padding:7px 10px; border-bottom:1px solid var(--line-soft); color:var(--ink-dim); white-space:nowrap; }
+  tbody tr:hover td{ background:var(--bg-panel-raised); color:var(--ink); }
+  tbody td.num{ font-family:var(--mono); text-align:right; }
+  td.codigo{ font-family:var(--mono); color:var(--ink); }
+
+  .badge{ display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px; font-family:var(--mono); font-weight:600; }
+  .badge-ocupado{ background:var(--green-dim); color:var(--green); }
+  .badge-disponivel{ background:var(--line-soft); color:var(--ink-faint); }
+  .badge-bloqueado{ background:var(--red-dim); color:var(--red); }
+  .badge-reservado{ background:#3a3168; color:var(--violet); }
+
+  .table-wrap{ max-height:480px; overflow:auto; border-radius:6px; }
+  .table-wrap::-webkit-scrollbar{ width:8px; height:8px; }
+  .table-wrap::-webkit-scrollbar-thumb{ background:var(--line); border-radius:4px; }
+  .table-wrap::-webkit-scrollbar-track{ background:transparent; }
+
+  .table-foot{
+    display:flex; justify-content:space-between; align-items:center; margin-top:10px;
+    font-size:11.5px; color:var(--ink-faint); font-family:var(--mono);
+  }
+
+  /* ---------- bars / mini viz ---------- */
+  .bar-row{ display:flex; align-items:center; gap:10px; padding:6px 0; }
+  .bar-label{ width:150px; font-size:12px; color:var(--ink-dim); flex-shrink:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .bar-track{ flex:1; height:8px; background:var(--line-soft); border-radius:4px; overflow:hidden; }
+  .bar-fill{ height:100%; border-radius:4px; }
+  .bar-value{ width:108px; text-align:right; font-family:var(--mono); font-size:11.5px; color:var(--ink-faint); flex-shrink:0; }
+
+  /* ---------- Grupo de barras (depósito: apanha x pulmão) ---------- */
+  .dep-group{ margin-bottom:18px; }
+  .dep-group:last-child{ margin-bottom:0; }
+  .dep-group-head{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; }
+  .dep-group-name{ font-size:13px; font-weight:600; color:var(--ink); }
+  .dep-group-total{ font-family:var(--mono); font-size:11.5px; color:var(--ink-faint); }
+  .dep-subbar-row{ display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+  .dep-subbar-label{ width:64px; font-family:var(--mono); font-size:10.5px; text-transform:uppercase; color:var(--ink-faint); flex-shrink:0; }
+  .dep-subbar-track{ flex:1; height:14px; background:var(--line-soft); border-radius:4px; overflow:hidden; }
+  .dep-subbar-fill{ height:100%; border-radius:4px; }
+  .dep-subbar-value{ width:118px; text-align:right; font-family:var(--mono); font-size:12px; color:var(--ink); font-weight:600; flex-shrink:0; }
+
+  /* ---------- Resumo (compartilhável) ---------- */
+  .summary-header{ text-align:center; margin-bottom:22px; }
+  .summary-header h2{ font-size:20px; margin:0 0 6px; font-weight:700; }
+  .summary-header .date{ font-family:var(--mono); font-size:12px; color:var(--ink-faint); letter-spacing:0.3px; }
+
+  .summary-grid{ display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
+  @media (max-width: 900px){ .summary-grid{ grid-template-columns:1fr; } }
+
+  .loading-overlay{
+    position:fixed; inset:0; background:rgba(30,58,95,.92);
+    display:flex; align-items:center; justify-content:center;
+    z-index:200; font-family:var(--mono); color:var(--amber); font-size:13px; letter-spacing:0.5px;
+  }
+  .hidden{ display:none !important; }
+
+  footer{
+    text-align:center; color:var(--ink-faint); font-family:var(--mono);
+    font-size:10.5px; padding:24px 0 10px; letter-spacing:0.4px;
+  }
+
+  ::-webkit-scrollbar{ width:10px; height:10px; }
+  ::-webkit-scrollbar-thumb{ background:var(--line); border-radius:5px; }
+  ::-webkit-scrollbar-track{ background:var(--bg); }
+
+  @media print{
+    .topbar, .tabbar{ display:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <img class="brand-mark" src="data:image/png;base64,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" alt="Comercial Zaffari">
+    <div class="brand-text">
+      <h1>Posição de Endereços</h1>
+      <div class="sub">CD 107 · Nova Santa Rita</div>
+    </div>
+  </div>
+
+  <div class="status-strip" id="statusStrip">
+    <span><span class="dot" id="liveDot"></span><span id="statusText">Nenhum arquivo carregado</span></span>
+  </div>
+
+  <div style="display:flex; gap:10px;">
+    <button class="btn" id="btnLimparCache" title="Remove o arquivo salvo localmente para a próxima vez que abrir">✕ Limpar dados salvos</button>
+    <button class="btn" id="btnExport">⬇ Exportar CSV filtrado</button>
+    <label class="btn btn-primary" for="fileInput">⭱ Importar arquivo do dia</label>
+    <input type="file" id="fileInput" accept=".txt,.csv">
+  </div>
+</div>
+
+<div class="tabbar hidden" id="tabbar">
+  <button class="tab-btn active" data-tab="resumo"><span class="tab-icon">▣</span> Resumo</button>
+  <button class="tab-btn" data-tab="detalhado"><span class="tab-icon">▤</span> Detalhado</button>
+</div>
+
+<div class="shell">
+  <div class="empty-state" id="emptyState">
+    <div class="icon">▢▢▢</div>
+    <h2>Importe a posição de endereços do dia</h2>
+    <p>Clique em "Importar arquivo do dia" e selecione o .txt exportado do WMS<br>
+    (ex: Posição_de_endereços_Total.txt). O arquivo fica só no seu navegador — nada é enviado a servidor nenhum.</p>
+    <label class="btn btn-primary" for="fileInput" style="font-size:13px; padding:11px 22px;">⭱ Selecionar arquivo</label>
+  </div>
+</div>
+
+<!-- ===================== ABA RESUMO (compartilhável) ===================== -->
+<div class="tab-panel active" id="tab-resumo">
+  <div class="shell-narrow hidden" id="resumoContent">
+
+    <div class="summary-header">
+      <h2>Posição de Estoque · CD 107</h2>
+      <div class="date" id="summaryDate"></div>
+      <button class="btn btn-primary" id="btnGerarImagem" style="margin-top:14px;">▣ Gerar imagem para compartilhar</button>
+    </div>
+
+    <div class="kpi-row" id="kpiRowResumo"></div>
+
+    <div class="summary-grid">
+      <div class="panel">
+        <div class="panel-title">Ocupação por Depósito</div>
+        <div class="panel-sub">Apanha x Pulmão, por área</div>
+        <div id="depositoGroupBars"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Ocupação por Departamento</div>
+        <div class="panel-sub">Endereços ocupados, por classificação de rua</div>
+        <div id="deptBarsResumo"></div>
+      </div>
+    </div>
+
+    <div class="summary-grid">
+      <div class="panel">
+        <div class="panel-title">Status dos Endereços</div>
+        <div class="panel-sub">Sem considerar endereços inativos</div>
+        <div id="statusBarsResumo"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Espécie de Endereço</div>
+        <div class="panel-sub">Apanha vs Pulmão (ocupados)</div>
+        <div id="especieBarsResumo"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===================== ABA DETALHADO (com filtros) ===================== -->
+<div class="tab-panel" id="tab-detalhado">
+  <div class="shell">
+    <div class="hidden" id="detalhadoContent">
+
+      <div class="kpi-row" id="kpiRow"></div>
+
+      <div class="filters" id="filtersBar">
+        <div class="filter-group">
+          <label>Depósito</label>
+          <select id="fDeposito"><option value="">Todos</option></select>
+        </div>
+        <div class="filter-group">
+          <label>Departamento</label>
+          <select id="fDepartamento"><option value="">Todos</option></select>
+        </div>
+        <div class="filter-group">
+          <label>Status</label>
+          <select id="fStatus"><option value="">Todos</option></select>
+        </div>
+        <div class="filter-group">
+          <label>Espécie</label>
+          <select id="fEspecie"><option value="">Todas</option></select>
+        </div>
+        <div class="filter-group" id="fCat1Group">
+          <label>Categoria (produto)</label>
+          <select id="fCat1"><option value="">Todas</option></select>
+        </div>
+        <div class="filter-group filter-search">
+          <label>Buscar código / descrição / endereço</label>
+          <input type="text" id="fBusca" placeholder="ex: 105897, vodka, 01-003-8...">
+        </div>
+        <button class="clear-btn" id="btnClear">✕ Limpar filtros</button>
+      </div>
+
+      <div class="panel-grid">
+        <div class="panel">
+          <div class="panel-title">Ocupação por Departamento <span class="tag" id="deptCount"></span></div>
+          <div class="panel-sub">Endereços ocupados, por classificação de rua</div>
+          <div id="deptBars"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Status dos Endereços</div>
+          <div class="panel-sub">Distribuição geral (filtro aplicado)</div>
+          <div id="statusBars"></div>
+        </div>
+      </div>
+
+      <div class="panel-grid">
+        <div class="panel">
+          <div class="panel-title">Ocupação por Rua <span class="tag">Top 20</span></div>
+          <div class="panel-sub">Ruas com mais endereços ocupados</div>
+          <div id="ruaBars"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Espécie de Endereço</div>
+          <div class="panel-sub">Apanha vs Pulmão (ocupados)</div>
+          <div id="especieBars"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Detalhe de Endereços <span class="tag" id="tableTag"></span></div>
+        <div class="panel-sub">Clique nos cabeçalhos para ordenar. Endereços inativos e espécie não informada já estão excluídos.</div>
+        <div class="table-wrap">
+          <table id="dataTable">
+            <thead>
+              <tr>
+                <th data-key="endereco">Endereço</th>
+                <th data-key="DEPOSITO">Dep.</th>
+                <th data-key="DEPARTAMENTO">Departamento</th>
+                <th data-key="ESPECIE_END">Espécie</th>
+                <th data-key="CODIGO">Código</th>
+                <th data-key="DESCRICAO">Descrição</th>
+                <th data-key="EMBALAGEM">Emb.</th>
+                <th data-key="QTD_END">Qtd</th>
+                <th data-key="TIPEND">Altura</th>
+                <th data-key="ESTATUS_ENDERECO">Status</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+        <div class="table-foot">
+          <span id="rowCountInfo"></span>
+          <span id="pageInfo"></span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<footer>POSIÇÃO DE ENDEREÇOS · CD 107 · ATUALIZADO MANUALMENTE A PARTIR DO ARQUIVO WMS</footer>
+
+<div class="loading-overlay hidden" id="loadingOverlay">Processando arquivo...</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ============================================================
+  // ESTADO GLOBAL
+  // ============================================================
+  let ACTIVE_DATA = [];    // já SEM inativos e SEM espécie vazia (base de tudo)
+  let FILTERED_DATA = [];  // ACTIVE_DATA após filtros da aba Detalhado
+  let sortKey = null;
+  let sortDir = 1;
+  const PAGE_SIZE = 200;
+  let currentPage = 1;
+  let lastFileName = "";
+  let lastImportDate = null;
+
+  const STATUS_ORDER = ["Ocupado","Disponivel","Reservado","Bloqueado"];
+  const STATUS_LABELS = {
+    "Ocupado":"Ocupado", "Disponivel":"Disponível", "Reservado":"Reservado", "Bloqueado":"Bloqueado"
+  };
+  const STATUS_COLORS = {
+    "Ocupado":"var(--green)", "Disponivel":"var(--ink-faint)", "Reservado":"var(--violet)", "Bloqueado":"var(--red)"
+  };
+
+  const DEPOSITO_NOMES = { "01":"Mercearia", "02":"Perecíveis", "03":"Bebidas" };
+
+  // ============================================================
+  // CLASSIFICAÇÃO DE DEPARTAMENTO
+  // ============================================================
+  // Preferência: usa a coluna SUBDIVISAO do próprio arquivo (quando presente).
+  // Fallback: regra antiga por faixa de rua, para arquivos no formato anterior
+  // (sem SUBDIVISAO), assim os dois formatos continuam funcionando.
+  function classificaDepartamentoFallback(deposito, ruaStr){
+    const dep = (deposito||"").trim();
+    const ruaNum = parseInt(ruaStr, 10);
+
+    if (dep === "02") return "Perecíveis";
+    if (dep === "03") return "Bebidas";
+
+    if (dep === "01"){
+      if (isNaN(ruaNum)) return "Outros/Não classificado";
+      if (ruaNum >= 21 && ruaNum <= 24) return "Bomboniere";
+      if (ruaNum >= 3  && ruaNum <= 15) return "Alimentos 01";
+      if (ruaNum >= 51 && ruaNum <= 67) return "Alimentos 02";
+      if (ruaNum === 71 || ruaNum === 72) return "Confinados";
+      if (ruaNum >= 73 && ruaNum <= 106) return "Bazar/Limpeza";
+      return "Outros/Não classificado";
+    }
+    return "Outros/Não classificado";
+  }
+
+  const DEPT_COLORS = {
+    "Perecíveis": "#5fc28a",
+    "Bebidas": "#6fb1e8",
+    "Bomboniere": "#b3a3e8",
+    "Alimentos 1": "#f0a83c",
+    "Alimentos 2": "#e0c23c",
+    "Alimentos 01": "#f0a83c",
+    "Alimentos 02": "#e0c23c",
+    "Confinados": "#ef7763",
+    "Congelados": "#52a8c4",
+    "Resfriados": "#8ad1e0",
+    "Bazar/Eletro": "#52c4d4",
+    "Bazar/Limpeza": "#52c4d4",
+    "Limpeza/Perfumaria": "#c98fd1",
+    "Outros/Não classificado": "#7d9bbd"
+  };
+
+  // ============================================================
+  // PARSING DO ARQUIVO
+  // ============================================================
+  function decodeFileBuffer(buffer){
+    const utf8Text = new TextDecoder("utf-8", {fatal:false}).decode(buffer);
+    const hasReplacementChar = utf8Text.indexOf("\uFFFD") !== -1;
+    if (hasReplacementChar) return new TextDecoder("iso-8859-1").decode(buffer);
+    const mojibakeHits = (utf8Text.match(/Ã[\u0080-\u00BF]/g) || []).length;
+    if (mojibakeHits > 5) return new TextDecoder("iso-8859-1").decode(buffer);
+    return utf8Text;
+  }
+
+  function parseCSV(text){
+    const lines = text.split(/\r\n|\r|\n/).filter(l => l.length > 0);
+    if (lines.length < 2) return [];
+
+    const header = lines[0].split(";").map(h => h.trim());
+    const idx = {};
+    header.forEach((h,i) => idx[h] = i);
+
+    // detecta formato: arquivo novo tem STATUS_ENDERECO e SUBDIVISAO; antigo tem ESTATUS_ENDERECO
+    const temFormatoNovo = idx["STATUS_ENDERECO"] !== undefined;
+    const statusCol = temFormatoNovo ? "STATUS_ENDERECO" : "ESTATUS_ENDERECO";
+    const temSubdivisao = idx["SUBDIVISAO"] !== undefined;
+    const temCat1 = idx["CAT_1"] !== undefined;
+
+    const out = [];
+    for (let i=1; i<lines.length; i++){
+      const cols = lines[i].split(";");
+      if (cols.length < 6) continue;
+
+      const get = (name) => {
+        const c = idx[name];
+        return (c !== undefined && cols[c] !== undefined) ? cols[c].trim() : "";
+      };
+
+      const deposito = get("DEPOSITO");
+      const rua = get("CODRUA");
+      const predio = get("NROPREDIO");
+      const apto = get("NROAPARTAMENTO");
+      const sala = get("NROSALA");
+      const status = get(statusCol) || "Inativo";
+      const especie = get("ESPECIE_END");
+      const codigo = get("CODIGO");
+      const qtdRaw = get("QTD_END");
+      const qtd = qtdRaw === "" ? 0 : (parseFloat(qtdRaw.replace(",", ".")) || 0);
+      const subdivisao = temSubdivisao ? get("SUBDIVISAO") : "";
+      const departamento = subdivisao !== "" ? subdivisao
+        : (temSubdivisao ? "Outros/Não classificado" : classificaDepartamentoFallback(deposito, rua));
+
+      out.push({
+        DEPOSITO: deposito,
+        CODRUA: rua,
+        NROPREDIO: predio,
+        NROAPARTAMENTO: apto,
+        NROSALA: sala,
+        endereco: [deposito, rua, predio, apto, sala].join("-"),
+        ESPECIE_END: especie,
+        CODIGO: codigo,
+        DESCRICAO: get("DESCRICAO"),
+        EMBALAGEM: get("EMBALAGEM"),
+        QTD_END: qtd,
+        TIPEND: get("TIPEND"),
+        ESTATUS_ENDERECO: status,
+        DEPARTAMENTO: departamento,
+        PAVILHAO: get("PAVILHAO"),
+        CAT_1: temCat1 ? get("CAT_1") : "",
+        CAT_2: temCat1 ? get("CAT_2") : "",
+        CAT_3: temCat1 ? get("CAT_3") : "",
+        temProduto: codigo !== ""
+      });
+    }
+    return out;
+  }
+
+  // ============================================================
+  // PERSISTÊNCIA LOCAL (IndexedDB) — guarda o último arquivo importado
+  // para reabrir automaticamente na próxima vez, sem precisar reimportar.
+  // ============================================================
+  const DB_NAME = "posicaoEstoqueCD107";
+  const DB_STORE = "ultimoArquivo";
+  let dbPromise = null;
+
+  function openDB(){
+    if (dbPromise) return dbPromise;
+    dbPromise = new Promise((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, 1);
+      req.onupgradeneeded = () => {
+        req.result.createObjectStore(DB_STORE);
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    return dbPromise;
+  }
+
+  async function salvarUltimoArquivo(fileName, importDate, text){
+    try{
+      const db = await openDB();
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction(DB_STORE, "readwrite");
+        tx.objectStore(DB_STORE).put({ fileName, importDate: importDate.toISOString(), text }, "ultimo");
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error);
+      });
+    } catch(err){
+      console.warn("Não foi possível salvar o arquivo localmente:", err);
+    }
+  }
+
+  async function carregarUltimoArquivo(){
+    try{
+      const db = await openDB();
+      return await new Promise((resolve, reject) => {
+        const tx = db.transaction(DB_STORE, "readonly");
+        const req = tx.objectStore(DB_STORE).get("ultimo");
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror = () => reject(req.error);
+      });
+    } catch(err){
+      console.warn("Não foi possível carregar o último arquivo salvo:", err);
+      return null;
+    }
+  }
+
+  async function limparUltimoArquivo(){
+    try{
+      const db = await openDB();
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction(DB_STORE, "readwrite");
+        tx.objectStore(DB_STORE).delete("ultimo");
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error);
+      });
+    } catch(err){
+      console.warn("Não foi possível limpar o arquivo salvo:", err);
+    }
+  }
+
+  // ============================================================
+  // IMPORTAÇÃO DE ARQUIVO
+  // ============================================================
+  const fileInput = document.getElementById("fileInput");
+  const loadingOverlay = document.getElementById("loadingOverlay");
+  const emptyState = document.getElementById("emptyState");
+  const tabbar = document.getElementById("tabbar");
+  const resumoContent = document.getElementById("resumoContent");
+  const detalhadoContent = document.getElementById("detalhadoContent");
+  const statusText = document.getElementById("statusText");
+  const liveDot = document.getElementById("liveDot");
+
+  // Processa um texto já decodificado (vindo de upload novo ou do cache local) e
+  // atualiza todo o dashboard. `persistir` controla se deve salvar no IndexedDB
+  // (true para upload novo; false ao restaurar do próprio cache, para não regravar).
+  function processarTexto(text, fileName, importDate, persistir){
+    const parsed = parseCSV(text);
+    if (parsed.length === 0){
+      alert("Não consegui ler nenhum registro válido neste arquivo. Confira se é o .txt da posição de endereços (separado por ';').");
+      return false;
+    }
+
+    // Base ativa: exclui Inativos e exclui espécie não informada, em TUDO.
+    ACTIVE_DATA = parsed.filter(r => r.ESTATUS_ENDERECO !== "Inativo" && r.ESPECIE_END !== "");
+
+    lastFileName = fileName;
+    lastImportDate = importDate;
+
+    initFilters();
+    applyFilters();          // aba Detalhado
+    renderResumo();          // aba Resumo
+
+    emptyState.classList.add("hidden");
+    tabbar.classList.remove("hidden");
+    resumoContent.classList.remove("hidden");
+    detalhadoContent.classList.remove("hidden");
+    updateStatusStrip();
+
+    if (persistir) salvarUltimoArquivo(fileName, importDate, text);
+    return true;
+  }
+
+  fileInput.addEventListener("change", function(e){
+    const file = e.target.files[0];
+    if (!file) return;
+    loadingOverlay.classList.remove("hidden");
+
+    const reader = new FileReader();
+    reader.onload = function(ev){
+      try{
+        const buffer = ev.target.result;
+        const text = decodeFileBuffer(buffer);
+        processarTexto(text, file.name, new Date(), true);
+      } catch(err){
+        console.error(err);
+        alert("Erro ao processar o arquivo: " + err.message);
+      } finally {
+        loadingOverlay.classList.add("hidden");
+      }
+    };
+    reader.onerror = function(){
+      alert("Não foi possível ler o arquivo selecionado.");
+      loadingOverlay.classList.add("hidden");
+    };
+    reader.readAsArrayBuffer(file);
+  });
+
+  function updateStatusStrip(origemCache){
+    liveDot.classList.add("live");
+    const dt = lastImportDate;
+    const dataStr = dt.toLocaleDateString("pt-BR") + " às " + dt.toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"});
+    const origemTxt = origemCache ? " · carregado automaticamente (última importação salva)" : "";
+    statusText.textContent = lastFileName + " · importado em " + dataStr + " · " + ACTIVE_DATA.length.toLocaleString("pt-BR") + " endereços ativos" + origemTxt;
+    document.getElementById("summaryDate").textContent = "Atualizado em " + dataStr;
+  }
+
+  // ============================================================
+  // RESTAURAÇÃO AUTOMÁTICA DO ÚLTIMO ARQUIVO SALVO (ao abrir a página)
+  // ============================================================
+  (async function restaurarUltimoArquivo(){
+    const salvo = await carregarUltimoArquivo();
+    if (!salvo || !salvo.text) return;
+    try{
+      const ok = processarTexto(salvo.text, salvo.fileName, new Date(salvo.importDate), false);
+      if (ok) updateStatusStrip(true);
+    } catch(err){
+      console.warn("Não foi possível restaurar o último arquivo salvo:", err);
+    }
+  })();
+
+  // ============================================================
+  // ABAS
+  // ============================================================
+  document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+      btn.classList.add("active");
+      document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+    });
+  });
+
+  // ============================================================
+  // FILTROS (aba Detalhado)
+  // ============================================================
+  const fDeposito = document.getElementById("fDeposito");
+  const fDepartamento = document.getElementById("fDepartamento");
+  const fStatus = document.getElementById("fStatus");
+  const fEspecie = document.getElementById("fEspecie");
+  const fCat1 = document.getElementById("fCat1");
+  const fCat1Group = document.getElementById("fCat1Group");
+  const fBusca = document.getElementById("fBusca");
+  const btnClear = document.getElementById("btnClear");
+
+  function uniqueSorted(arr){
+    return Array.from(new Set(arr.filter(v => v !== ""))).sort();
+  }
+
+  function fillSelect(select, values, currentVal){
+    const placeholder = select.firstElementChild;
+    select.innerHTML = "";
+    select.appendChild(placeholder);
+    values.forEach(v => {
+      const opt = document.createElement("option");
+      opt.value = v;
+      opt.textContent = v;
+      select.appendChild(opt);
+    });
+    if (currentVal && values.includes(currentVal)) select.value = currentVal;
+  }
+
+  function initFilters(){
+    fillSelect(fDeposito, uniqueSorted(ACTIVE_DATA.map(d => d.DEPOSITO)), fDeposito.value);
+    fillSelect(fDepartamento, uniqueSorted(ACTIVE_DATA.map(d => d.DEPARTAMENTO)), fDepartamento.value);
+    fillSelect(fStatus, STATUS_ORDER.filter(s => ACTIVE_DATA.some(d => d.ESTATUS_ENDERECO === s)), fStatus.value);
+    fillSelect(fEspecie, uniqueSorted(ACTIVE_DATA.map(d => d.ESPECIE_END)), fEspecie.value);
+
+    const temCat1 = ACTIVE_DATA.some(d => d.CAT_1 && d.CAT_1 !== "");
+    fCat1Group.classList.toggle("hidden", !temCat1);
+    if (temCat1) fillSelect(fCat1, uniqueSorted(ACTIVE_DATA.map(d => d.CAT_1)), fCat1.value);
+  }
+
+  [fDeposito, fDepartamento, fStatus, fEspecie, fCat1].forEach(el => {
+    el.addEventListener("change", () => { currentPage = 1; applyFilters(); });
+  });
+  let buscaTimeout;
+  fBusca.addEventListener("input", () => {
+    clearTimeout(buscaTimeout);
+    buscaTimeout = setTimeout(() => { currentPage = 1; applyFilters(); }, 220);
+  });
+  btnClear.addEventListener("click", () => {
+    fDeposito.value = ""; fDepartamento.value = ""; fStatus.value = ""; fEspecie.value = ""; fCat1.value = ""; fBusca.value = "";
+    currentPage = 1;
+    applyFilters();
+  });
+
+  function applyFilters(){
+    const dep = fDeposito.value;
+    const dpto = fDepartamento.value;
+    const status = fStatus.value;
+    const esp = fEspecie.value;
+    const cat1 = fCat1.value;
+    const busca = fBusca.value.trim().toLowerCase();
+
+    FILTERED_DATA = ACTIVE_DATA.filter(r => {
+      if (dep && r.DEPOSITO !== dep) return false;
+      if (dpto && r.DEPARTAMENTO !== dpto) return false;
+      if (status && r.ESTATUS_ENDERECO !== status) return false;
+      if (esp && r.ESPECIE_END !== esp) return false;
+      if (cat1 && r.CAT_1 !== cat1) return false;
+      if (busca){
+        const hay = (r.endereco + " " + r.CODIGO + " " + r.DESCRICAO).toLowerCase();
+        if (hay.indexOf(busca) === -1) return false;
+      }
+      return true;
+    });
+
+    renderKPIs(FILTERED_DATA, "kpiRow");
+    renderChartsDetalhado();
+    renderTable();
+  }
+
+  // ============================================================
+  // KPIs (reutilizável: Resumo e Detalhado)
+  // ============================================================
+  function renderKPIs(data, containerId){
+    const total = data.length;
+    const byStatus = {};
+    STATUS_ORDER.forEach(s => byStatus[s] = 0);
+    data.forEach(r => { byStatus[r.ESTATUS_ENDERECO] = (byStatus[r.ESTATUS_ENDERECO]||0) + 1; });
+
+    const ocupados = byStatus["Ocupado"] || 0;
+    const disponiveis = byStatus["Disponivel"] || 0;
+    const bloqueados = byStatus["Bloqueado"] || 0;
+    const reservados = byStatus["Reservado"] || 0;
+
+    const taxa = total > 0 ? (ocupados / total * 100) : 0;
+    const skusDistintos = new Set(data.filter(r => r.temProduto).map(r => r.CODIGO)).size;
+
+    // quebra Apanha x Pulmão para cada métrica
+    const apanhaData = data.filter(r => r.ESPECIE_END === "Apanha");
+    const pulmaoData = data.filter(r => r.ESPECIE_END === "Pulmão");
+    const countByStatus = (arr, status) => arr.filter(r => r.ESTATUS_ENDERECO === status).length;
+
+    const split = {
+      total: { ap: apanhaData.length, pu: pulmaoData.length },
+      ocupados: { ap: countByStatus(apanhaData,"Ocupado"), pu: countByStatus(pulmaoData,"Ocupado") },
+      disponiveis: { ap: countByStatus(apanhaData,"Disponivel"), pu: countByStatus(pulmaoData,"Disponivel") },
+      bloqueados: { ap: countByStatus(apanhaData,"Bloqueado"), pu: countByStatus(pulmaoData,"Bloqueado") },
+      reservados: { ap: countByStatus(apanhaData,"Reservado"), pu: countByStatus(pulmaoData,"Reservado") },
+    };
+    const taxaApanha = apanhaData.length > 0 ? (split.ocupados.ap / apanhaData.length * 100) : 0;
+    const taxaPulmao = pulmaoData.length > 0 ? (split.ocupados.pu / pulmaoData.length * 100) : 0;
+
+    const fmtSplit = (s) => `Apanha: ${s.ap.toLocaleString("pt-BR")} · Pulmão: ${s.pu.toLocaleString("pt-BR")}`;
+
+    const cards = [
+      {cls:"c-total",   label:"Total de Endereços", value: total.toLocaleString("pt-BR"), foot: fmtSplit(split.total)},
+      {cls:"c-ocupado",  label:"Ocupados", value: ocupados.toLocaleString("pt-BR"), foot: fmtSplit(split.ocupados) + ` · ${skusDistintos.toLocaleString("pt-BR")} SKUs`},
+      {cls:"c-disp",     label:"Disponíveis", value: disponiveis.toLocaleString("pt-BR"), foot: fmtSplit(split.disponiveis)},
+      {cls:"c-bloq",     label:"Bloqueados", value: bloqueados.toLocaleString("pt-BR"), foot: fmtSplit(split.bloqueados)},
+      {cls:"c-reserv",   label:"Reservados", value: reservados.toLocaleString("pt-BR"), foot: fmtSplit(split.reservados)},
+      {cls:"c-taxa",     label:"Taxa de Ocupação", value: taxa.toFixed(1) + "%", foot: `Apanha: ${taxaApanha.toFixed(1)}% · Pulmão: ${taxaPulmao.toFixed(1)}%`},
+    ];
+
+    document.getElementById(containerId).innerHTML = cards.map(c => `
+      <div class="kpi-card ${c.cls}">
+        <div class="kpi-label">${c.label}</div>
+        <div class="kpi-value">${c.value}</div>
+        <div class="kpi-foot">${c.foot}</div>
+      </div>
+    `).join("");
+  }
+
+  // ============================================================
+  // GRÁFICOS — utilitários
+  // ============================================================
+  // percentBase: total sobre o qual calcular o "%" exibido ao lado do valor.
+  // Pode ser um número fixo (mesma base para todas as barras) ou uma função
+  // (label) => número, quando cada barra tem sua própria base (ex: % de ocupação
+  // de cada departamento sobre o total de endereços daquele mesmo departamento).
+  // Se omitido, usa a soma dos próprios valores da lista (percentual de composição).
+  function renderBarList(containerId, entries, colorFn, maxBars, percentBase){
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    if (entries.length === 0){
+      container.innerHTML = '<div style="color:var(--ink-faint); font-size:12.5px; padding:8px 0;">Sem dados para o filtro atual.</div>';
+      return;
+    }
+    const list = maxBars ? entries.slice(0, maxBars) : entries;
+    const max = Math.max(...list.map(e => e.value), 1);
+    const baseFn = typeof percentBase === "function"
+      ? percentBase
+      : () => (percentBase || entries.reduce((s,e) => s + e.value, 0) || 1);
+    container.innerHTML = list.map(e => {
+      const base = baseFn(e.label) || 1;
+      const pct = (e.value / base * 100);
+      return `
+      <div class="bar-row">
+        <div class="bar-label" title="${e.label}">${e.label}</div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:${(e.value/max*100).toFixed(1)}%; background:${colorFn(e.label)};"></div>
+        </div>
+        <div class="bar-value">${e.value.toLocaleString("pt-BR")} <span style="color:var(--ink-faint);">(${pct.toFixed(1)}%)</span></div>
+      </div>
+    `;
+    }).join("");
+  }
+
+  // Gráfico especial: por depósito, Apanha x Pulmão (ocupados), com % de ocupação
+  // (ocupados daquela espécie / total de endereços daquele depósito+espécie, dentro da base ativa)
+  function renderDepositoGroupBars(containerId, data){
+    const container = document.getElementById(containerId);
+    const order = ["01","02","03"];
+
+    const ocupCounts = {};
+    const totalCounts = {};
+    order.forEach(d => { ocupCounts[d] = {Apanha:0, "Pulmão":0}; totalCounts[d] = {Apanha:0, "Pulmão":0}; });
+
+    data.forEach(r => {
+      if (!totalCounts[r.DEPOSITO]) return;
+      if (r.ESPECIE_END !== "Apanha" && r.ESPECIE_END !== "Pulmão") return;
+      totalCounts[r.DEPOSITO][r.ESPECIE_END]++;
+      if (r.ESTATUS_ENDERECO === "Ocupado") ocupCounts[r.DEPOSITO][r.ESPECIE_END]++;
+    });
+
+    const maxVal = Math.max(1, ...order.map(d => Math.max(ocupCounts[d].Apanha, ocupCounts[d]["Pulmão"])));
+
+    container.innerHTML = order.map(d => {
+      const nome = DEPOSITO_NOMES[d] || ("Depósito " + d);
+      const total = ocupCounts[d].Apanha + ocupCounts[d]["Pulmão"];
+      const pctApanha = totalCounts[d].Apanha > 0 ? (ocupCounts[d].Apanha / totalCounts[d].Apanha * 100) : 0;
+      const pctPulmao = totalCounts[d]["Pulmão"] > 0 ? (ocupCounts[d]["Pulmão"] / totalCounts[d]["Pulmão"] * 100) : 0;
+      return `
+        <div class="dep-group">
+          <div class="dep-group-head">
+            <span class="dep-group-name">${nome}</span>
+            <span class="dep-group-total">${total.toLocaleString("pt-BR")} ocupados</span>
+          </div>
+          <div class="dep-subbar-row">
+            <span class="dep-subbar-label">Apanha</span>
+            <div class="dep-subbar-track">
+              <div class="dep-subbar-fill" style="width:${(ocupCounts[d].Apanha/maxVal*100).toFixed(1)}%; background:var(--amber);"></div>
+            </div>
+            <span class="dep-subbar-value">${ocupCounts[d].Apanha.toLocaleString("pt-BR")} <span style="color:var(--ink-faint); font-weight:400;">(${pctApanha.toFixed(1)}%)</span></span>
+          </div>
+          <div class="dep-subbar-row">
+            <span class="dep-subbar-label">Pulmão</span>
+            <div class="dep-subbar-track">
+              <div class="dep-subbar-fill" style="width:${(ocupCounts[d]["Pulmão"]/maxVal*100).toFixed(1)}%; background:var(--green);"></div>
+            </div>
+            <span class="dep-subbar-value">${ocupCounts[d]["Pulmão"].toLocaleString("pt-BR")} <span style="color:var(--ink-faint); font-weight:400;">(${pctPulmao.toFixed(1)}%)</span></span>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  function computeDeptEntries(data){
+    const ocupados = data.filter(r => r.ESTATUS_ENDERECO === "Ocupado");
+    const deptCount = {};
+    ocupados.forEach(r => { deptCount[r.DEPARTAMENTO] = (deptCount[r.DEPARTAMENTO]||0) + 1; });
+    return Object.entries(deptCount).map(([k,v]) => ({label:k, value:v})).sort((a,b) => b.value - a.value);
+  }
+
+  // total de endereços (todos os status) por departamento, dentro do mesmo conjunto de dados —
+  // usado como base do % de ocupação de cada departamento (ocupados do depto ÷ total do depto)
+  function computeDeptTotals(data){
+    const totals = {};
+    data.forEach(r => { totals[r.DEPARTAMENTO] = (totals[r.DEPARTAMENTO]||0) + 1; });
+    return totals;
+  }
+
+  function computeStatusEntries(data){
+    const statusCount = {};
+    data.forEach(r => { statusCount[r.ESTATUS_ENDERECO] = (statusCount[r.ESTATUS_ENDERECO]||0) + 1; });
+    return STATUS_ORDER.filter(s => statusCount[s]).map(s => ({label: STATUS_LABELS[s], value: statusCount[s]}));
+  }
+
+  function computeEspecieEntries(data){
+    const ocupados = data.filter(r => r.ESTATUS_ENDERECO === "Ocupado");
+    const especieCount = {};
+    ocupados.forEach(r => { especieCount[r.ESPECIE_END] = (especieCount[r.ESPECIE_END]||0) + 1; });
+    return Object.entries(especieCount).map(([k,v]) => ({label:k, value:v})).sort((a,b) => b.value - a.value);
+  }
+
+  function statusColorByLabel(label){
+    const key = Object.keys(STATUS_LABELS).find(k => STATUS_LABELS[k] === label);
+    return STATUS_COLORS[key] || "var(--amber)";
+  }
+
+  const ESPECIE_COLORS = {"Apanha":"var(--amber)", "Pulmão":"var(--green)"};
+
+  // ============================================================
+  // RESUMO (aba compartilhável) — usa ACTIVE_DATA, sem filtros
+  // ============================================================
+  function renderResumo(){
+    renderKPIs(ACTIVE_DATA, "kpiRowResumo");
+    renderDepositoGroupBars("depositoGroupBars", ACTIVE_DATA);
+
+    const deptTotals = computeDeptTotals(ACTIVE_DATA);
+    renderBarList("deptBarsResumo", computeDeptEntries(ACTIVE_DATA), (label) => DEPT_COLORS[label] || "var(--amber)", null, (label) => deptTotals[label]);
+    renderBarList("statusBarsResumo", computeStatusEntries(ACTIVE_DATA), statusColorByLabel, null, ACTIVE_DATA.length);
+    renderBarList("especieBarsResumo", computeEspecieEntries(ACTIVE_DATA), (label) => ESPECIE_COLORS[label] || "var(--violet)", null, ACTIVE_DATA.length);
+  }
+
+  // ============================================================
+  // GRÁFICOS — aba Detalhado (respeita filtros)
+  // ============================================================
+  function renderChartsDetalhado(){
+    const deptEntries = computeDeptEntries(FILTERED_DATA);
+    const deptTotals = computeDeptTotals(FILTERED_DATA);
+    renderBarList("deptBars", deptEntries, (label) => DEPT_COLORS[label] || "var(--amber)", null, (label) => deptTotals[label]);
+    document.getElementById("deptCount").textContent = deptEntries.length + " departamentos";
+
+    renderBarList("statusBars", computeStatusEntries(FILTERED_DATA), statusColorByLabel, null, FILTERED_DATA.length);
+
+    const ocupados = FILTERED_DATA.filter(r => r.ESTATUS_ENDERECO === "Ocupado");
+    const ruaCount = {};
+    ocupados.forEach(r => {
+      const key = "Dep " + r.DEPOSITO + " · Rua " + r.CODRUA;
+      ruaCount[key] = (ruaCount[key]||0) + 1;
+    });
+    const ruaEntries = Object.entries(ruaCount).map(([k,v]) => ({label:k, value:v})).sort((a,b) => b.value - a.value);
+    const ocupadosFiltered = ocupados.length;
+    renderBarList("ruaBars", ruaEntries, () => "var(--blue)", 20, ocupadosFiltered);
+
+    renderBarList("especieBars", computeEspecieEntries(FILTERED_DATA), (label) => ESPECIE_COLORS[label] || "var(--violet)", null, FILTERED_DATA.length);
+  }
+
+  // ============================================================
+  // TABELA (aba Detalhado)
+  // ============================================================
+  const tableBody = document.getElementById("tableBody");
+  const rowCountInfo = document.getElementById("rowCountInfo");
+  const pageInfo = document.getElementById("pageInfo");
+  const tableTag = document.getElementById("tableTag");
+
+  function statusBadge(status){
+    const map = {
+      "Ocupado":"badge-ocupado", "Disponivel":"badge-disponivel", "Bloqueado":"badge-bloqueado", "Reservado":"badge-reservado"
+    };
+    const cls = map[status] || "badge-disponivel";
+    return `<span class="badge ${cls}">${STATUS_LABELS[status]||status}</span>`;
+  }
+
+  function sortedData(){
+    let data = FILTERED_DATA;
+    if (sortKey){
+      data = data.slice().sort((a,b) => {
+        let av = a[sortKey], bv = b[sortKey];
+        if (sortKey === "QTD_END"){ av = av||0; bv = bv||0; }
+        else { av = (av||"").toString().toLowerCase(); bv = (bv||"").toString().toLowerCase(); }
+        if (av < bv) return -1*sortDir;
+        if (av > bv) return 1*sortDir;
+        return 0;
+      });
+    }
+    return data;
+  }
+
+  function rowHTML(r){
+    return `
+      <tr>
+        <td class="codigo">${r.endereco}</td>
+        <td>${r.DEPOSITO}</td>
+        <td>${r.DEPARTAMENTO}</td>
+        <td>${r.ESPECIE_END || "—"}</td>
+        <td class="codigo">${r.CODIGO || "—"}</td>
+        <td title="${r.DESCRICAO}">${r.DESCRICAO || "—"}</td>
+        <td class="num">${r.EMBALAGEM || "—"}</td>
+        <td class="num">${r.QTD_END ? r.QTD_END.toLocaleString("pt-BR") : "—"}</td>
+        <td>${r.TIPEND || "—"}</td>
+        <td>${statusBadge(r.ESTATUS_ENDERECO)}</td>
+      </tr>
+    `;
+  }
+
+  function renderTable(){
+    currentPage = 1;
+    const data = sortedData();
+    const totalRows = data.length;
+    const totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
+    const pageData = data.slice(0, PAGE_SIZE);
+
+    tableBody.innerHTML = pageData.map(rowHTML).join("");
+
+    rowCountInfo.textContent = totalRows.toLocaleString("pt-BR") + " endereços encontrados";
+    pageInfo.textContent = totalPages > 1
+      ? ("Mostrando " + pageData.length.toLocaleString("pt-BR") + " de " + totalRows.toLocaleString("pt-BR") + " · role para carregar mais")
+      : (pageData.length.toLocaleString("pt-BR") + " linhas");
+    tableTag.textContent = totalRows.toLocaleString("pt-BR") + " registros";
+
+    document.querySelectorAll("#dataTable thead th").forEach(th => {
+      th.classList.remove("sorted-asc","sorted-desc");
+      if (th.dataset.key === sortKey) th.classList.add(sortDir === 1 ? "sorted-asc" : "sorted-desc");
+    });
+  }
+
+  document.querySelectorAll("#dataTable thead th").forEach(th => {
+    th.addEventListener("click", () => {
+      const key = th.dataset.key;
+      if (sortKey === key) sortDir *= -1;
+      else { sortKey = key; sortDir = 1; }
+      renderTable();
+    });
+  });
+
+  const tableWrap = document.querySelector(".table-wrap");
+  tableWrap.addEventListener("scroll", () => {
+    if (tableWrap.scrollTop + tableWrap.clientHeight >= tableWrap.scrollHeight - 60){
+      const data = sortedData();
+      const totalPages = Math.max(1, Math.ceil(data.length / PAGE_SIZE));
+      if (currentPage < totalPages){
+        currentPage++;
+        const start = (currentPage-1)*PAGE_SIZE;
+        const pageData = data.slice(start, start+PAGE_SIZE);
+        tableBody.insertAdjacentHTML("beforeend", pageData.map(rowHTML).join(""));
+        const shown = Math.min(currentPage*PAGE_SIZE, data.length);
+        pageInfo.textContent = totalPages > currentPage
+          ? ("Mostrando " + shown.toLocaleString("pt-BR") + " de " + data.length.toLocaleString("pt-BR") + " · role para carregar mais")
+          : ("Mostrando todas as " + data.length.toLocaleString("pt-BR") + " linhas");
+      }
+    }
+  });
+
+  document.getElementById("btnLimparCache").addEventListener("click", async () => {
+    if (!confirm("Isso remove o arquivo salvo localmente. Na próxima vez que abrir, o dashboard não carregará nada automaticamente. Confirma?")) return;
+    await limparUltimoArquivo();
+    alert("Dados salvos removidos. O arquivo atual em tela continua visível até você recarregar a página.");
+  });
+
+  // ============================================================
+  // EXPORTAÇÃO CSV (sempre da aba Detalhado, conforme filtros)
+  // ============================================================
+  document.getElementById("btnExport").addEventListener("click", () => {
+    if (FILTERED_DATA.length === 0){
+      alert("Importe um arquivo (e, se quiser, aplique filtros na aba Detalhado) antes de exportar.");
+      return;
+    }
+    const headers = ["Endereco","Deposito","Rua","Predio","Apartamento","Sala","Departamento","Especie","Codigo","Descricao","Embalagem","Qtd","Altura","Status"];
+    const rows = FILTERED_DATA.map(r => [
+      r.endereco, r.DEPOSITO, r.CODRUA, r.NROPREDIO, r.NROAPARTAMENTO, r.NROSALA,
+      r.DEPARTAMENTO, r.ESPECIE_END, r.CODIGO, (r.DESCRICAO||"").replace(/;/g,","), r.EMBALAGEM, r.QTD_END, r.TIPEND, r.ESTATUS_ENDERECO
+    ]);
+    const csv = [headers.join(";"), ...rows.map(r => r.join(";"))].join("\r\n");
+    const blob = new Blob(["\uFEFF" + csv], {type:"text/csv;charset=utf-8;"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const dataStr = new Date().toISOString().slice(0,10);
+    a.href = url;
+    a.download = "posicao_enderecos_filtrado_" + dataStr + ".csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  // ============================================================
+  // GERAR IMAGEM PARA COMPARTILHAR (canvas nativo, sem libs externas)
+  // ============================================================
+  function wrapText(ctx, text, maxWidth){
+    const words = text.split(" ");
+    const lines = [];
+    let line = "";
+    for (const w of words){
+      const test = line ? line + " " + w : w;
+      if (ctx.measureText(test).width > maxWidth && line){
+        lines.push(line);
+        line = w;
+      } else {
+        line = test;
+      }
+    }
+    if (line) lines.push(line);
+    return lines;
+  }
+
+  function gerarImagemResumo(){
+    if (ACTIVE_DATA.length === 0){
+      alert("Importe um arquivo antes de gerar a imagem.");
+      return;
+    }
+
+    const W = 900;
+    const PAD = 36;
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
+    // cores (mesmas do tema)
+    const COL = {
+      bg: "#1e3a5f", panel: "#234468", line: "#36608f", lineSoft:"#2d5580",
+      ink: "#eef3f9", inkDim: "#aec3da", inkFaint: "#7d9bbd",
+      amber: "#f0a83c", green: "#5fc28a", red: "#ef7763", violet: "#b3a3e8", blue: "#6fb1e8"
+    };
+    const DEPT_COL = {
+      "Perecíveis": "#5fc28a", "Bebidas": "#6fb1e8", "Bomboniere": "#b3a3e8",
+      "Alimentos 1": "#f0a83c", "Alimentos 2": "#e0c23c",
+      "Alimentos 01": "#f0a83c", "Alimentos 02": "#e0c23c",
+      "Confinados": "#ef7763", "Congelados": "#52a8c4", "Resfriados": "#8ad1e0",
+      "Bazar/Eletro": "#52c4d4", "Bazar/Limpeza": "#52c4d4", "Limpeza/Perfumaria": "#c98fd1",
+      "Outros/Não classificado": "#7d9bbd"
+    };
+    const STATUS_COL = { "Ocupado": COL.green, "Disponível": COL.inkFaint, "Reservado": COL.violet, "Bloqueado": COL.red };
+    const ESP_COL = { "Apanha": COL.amber, "Pulmão": COL.green };
+
+    // --- recalcula os mesmos dados já usados na tela ---
+    const total = ACTIVE_DATA.length;
+    const byStatus = {};
+    STATUS_ORDER.forEach(s => byStatus[s] = 0);
+    ACTIVE_DATA.forEach(r => { byStatus[r.ESTATUS_ENDERECO] = (byStatus[r.ESTATUS_ENDERECO]||0) + 1; });
+    const ocupados = byStatus["Ocupado"] || 0;
+    const taxa = total > 0 ? (ocupados/total*100) : 0;
+    const skus = new Set(ACTIVE_DATA.filter(r=>r.temProduto).map(r=>r.CODIGO)).size;
+
+    const deptEntries = computeDeptEntries(ACTIVE_DATA).slice(0, 8);
+    const deptTotalsImg = computeDeptTotals(ACTIVE_DATA);
+    const statusEntries = computeStatusEntries(ACTIVE_DATA);
+    const especieEntries = computeEspecieEntries(ACTIVE_DATA);
+
+    const apanhaData = ACTIVE_DATA.filter(r => r.ESPECIE_END === "Apanha");
+    const pulmaoData = ACTIVE_DATA.filter(r => r.ESPECIE_END === "Pulmão");
+    const countByStatus = (arr, status) => arr.filter(r => r.ESTATUS_ENDERECO === status).length;
+    const splitImg = {
+      total: { ap: apanhaData.length, pu: pulmaoData.length },
+      ocupados: { ap: countByStatus(apanhaData,"Ocupado"), pu: countByStatus(pulmaoData,"Ocupado") },
+      disponiveis: { ap: countByStatus(apanhaData,"Disponivel"), pu: countByStatus(pulmaoData,"Disponivel") },
+      bloqueados: { ap: countByStatus(apanhaData,"Bloqueado"), pu: countByStatus(pulmaoData,"Bloqueado") },
+      reservados: { ap: countByStatus(apanhaData,"Reservado"), pu: countByStatus(pulmaoData,"Reservado") },
+    };
+    const taxaApanhaImg = apanhaData.length > 0 ? (splitImg.ocupados.ap / apanhaData.length * 100) : 0;
+    const taxaPulmaoImg = pulmaoData.length > 0 ? (splitImg.ocupados.pu / pulmaoData.length * 100) : 0;
+
+    const order = ["01","02","03"];
+    const ocupCounts = {}, totalCounts = {};
+    order.forEach(d => { ocupCounts[d] = {Apanha:0,"Pulmão":0}; totalCounts[d] = {Apanha:0,"Pulmão":0}; });
+    ACTIVE_DATA.forEach(r => {
+      if (!totalCounts[r.DEPOSITO]) return;
+      if (r.ESPECIE_END !== "Apanha" && r.ESPECIE_END !== "Pulmão") return;
+      totalCounts[r.DEPOSITO][r.ESPECIE_END]++;
+      if (r.ESTATUS_ENDERECO === "Ocupado") ocupCounts[r.DEPOSITO][r.ESPECIE_END]++;
+    });
+
+    // --- calcula altura necessária dinamicamente ---
+    const dt = lastImportDate;
+    const dataStr = dt.toLocaleDateString("pt-BR") + " às " + dt.toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"});
+
+    const headerH = 110;
+    const kpiH = 124;
+    const depositoH = 58 + order.length * (22 + 19*2 + 8) - 8 + 4; // header + (linha nome+linhas das 2 barras+respiro) por depósito, menos o respiro extra do último
+    const deptH = 58 + deptEntries.length * 30 + 4;
+    const statusH = 58 + statusEntries.length * 30 + 4;
+    const especieH = 58 + especieEntries.length * 30 + 4;
+    const colLeftH = depositoH;
+    const colRightH = deptH;
+    const col2LeftH = statusH;
+    const col2RightH = especieH;
+    const gridGap = 16;
+    const row1H = Math.max(colLeftH, colRightH);
+    const row2H = Math.max(col2LeftH, col2RightH);
+    const footerH = 50;
+
+    const H = headerH + kpiH + row1H + row2H + footerH + PAD*2;
+    canvas.width = W;
+    canvas.height = H;
+
+    // fundo
+    ctx.fillStyle = COL.bg;
+    ctx.fillRect(0,0,W,H);
+
+    let y = PAD;
+
+    // header
+    ctx.textAlign = "center";
+    ctx.fillStyle = COL.ink;
+    ctx.font = "700 22px 'Segoe UI', Arial, sans-serif";
+    ctx.fillText("Posição de Estoque · CD 107", W/2, y + 24);
+    ctx.fillStyle = COL.inkFaint;
+    ctx.font = "500 12px 'JetBrains Mono', monospace";
+    ctx.fillText("Atualizado em " + dataStr, W/2, y + 46);
+    ctx.textAlign = "left";
+    y += headerH - 20;
+
+    // KPIs (6 cards em linha)
+    const kpis = [
+      {label:"TOTAL", value: total.toLocaleString("pt-BR"), accent: COL.blue, split: splitImg.total},
+      {label:"OCUPADOS", value: ocupados.toLocaleString("pt-BR"), accent: COL.green, split: splitImg.ocupados},
+      {label:"DISPONÍVEIS", value: (byStatus["Disponivel"]||0).toLocaleString("pt-BR"), accent: COL.inkFaint, split: splitImg.disponiveis},
+      {label:"BLOQUEADOS", value: (byStatus["Bloqueado"]||0).toLocaleString("pt-BR"), accent: COL.red, split: splitImg.bloqueados},
+      {label:"RESERVADOS", value: (byStatus["Reservado"]||0).toLocaleString("pt-BR"), accent: COL.violet, split: splitImg.reservados},
+      {label:"OCUPAÇÃO", value: taxa.toFixed(1)+"%", accent: COL.amber, splitText: `A: ${taxaApanhaImg.toFixed(1)}% · P: ${taxaPulmaoImg.toFixed(1)}%`},
+    ];
+    const kpiGap = 10;
+    const kpiW = (W - PAD*2 - kpiGap*5) / 6;
+    kpis.forEach((k, i) => {
+      const x = PAD + i*(kpiW+kpiGap);
+      roundRect(ctx, x, y, kpiW, kpiH-10, 8);
+      ctx.fillStyle = COL.panel;
+      ctx.fill();
+      ctx.fillStyle = k.accent;
+      ctx.fillRect(x, y, kpiW, 2.5);
+      ctx.fillStyle = COL.inkFaint;
+      ctx.font = "700 9px 'JetBrains Mono', monospace";
+      ctx.fillText(k.label, x+10, y+22);
+      ctx.fillStyle = COL.ink;
+      ctx.font = "700 17px 'JetBrains Mono', monospace";
+      ctx.fillText(k.value, x+10, y+48);
+      ctx.fillStyle = COL.inkDim;
+      ctx.font = "500 9px 'JetBrains Mono', monospace";
+      const splitTxt = k.splitText || `A: ${k.split.ap.toLocaleString("pt-BR")} · P: ${k.split.pu.toLocaleString("pt-BR")}`;
+      ctx.fillText(splitTxt, x+10, y+68);
+    });
+    y += kpiH + 6;
+
+    // --- ROW 1: Depósito | Departamento ---
+    const colGap = gridGap;
+    const colW = (W - PAD*2 - colGap) / 2;
+    drawPanelBg(ctx, PAD, y, colW, row1H, COL);
+    drawPanelBg(ctx, PAD+colW+colGap, y, colW, row1H, COL);
+
+    // título esquerda
+    ctx.fillStyle = COL.ink;
+    ctx.font = "700 13px 'Segoe UI', Arial, sans-serif";
+    ctx.fillText("Ocupação por Depósito", PAD+14, y+24);
+    ctx.fillStyle = COL.inkFaint;
+    ctx.font = "400 10.5px 'Segoe UI', Arial, sans-serif";
+    ctx.fillText("Apanha x Pulmão, por área", PAD+14, y+40);
+
+    let dy = y + 58;
+    const maxValDep = Math.max(1, ...order.map(d => Math.max(ocupCounts[d].Apanha, ocupCounts[d]["Pulmão"])));
+    order.forEach(d => {
+      const nome = DEPOSITO_NOMES[d] || ("Depósito "+d);
+      const totalDep = ocupCounts[d].Apanha + ocupCounts[d]["Pulmão"];
+      ctx.fillStyle = COL.ink;
+      ctx.font = "700 12px 'Segoe UI', Arial, sans-serif";
+      ctx.fillText(nome, PAD+14, dy+10);
+      ctx.fillStyle = COL.inkFaint;
+      ctx.font = "500 10.5px 'JetBrains Mono', monospace";
+      ctx.textAlign = "right";
+      ctx.fillText(totalDep.toLocaleString("pt-BR")+" ocupados", PAD+colW-14, dy+10);
+      ctx.textAlign = "left";
+      dy += 22;
+
+      [["Apanha", COL.amber, ocupCounts[d].Apanha, totalCounts[d].Apanha],
+       ["Pulmão", COL.green, ocupCounts[d]["Pulmão"], totalCounts[d]["Pulmão"]]].forEach(([lab, col, val, baseTot]) => {
+        const pct = baseTot>0 ? (val/baseTot*100) : 0;
+        ctx.fillStyle = COL.inkFaint;
+        ctx.font = "700 9px 'JetBrains Mono', monospace";
+        ctx.fillText(lab.toUpperCase(), PAD+14, dy+9);
+        const trackX = PAD+78, trackW = colW-78-110;
+        roundRect(ctx, trackX, dy, trackW, 11, 4); ctx.fillStyle = COL.lineSoft; ctx.fill();
+        const fillW = Math.max(2, (val/maxValDep)*trackW);
+        roundRect(ctx, trackX, dy, fillW, 11, 4); ctx.fillStyle = col; ctx.fill();
+        ctx.fillStyle = COL.ink;
+        ctx.font = "700 11px 'JetBrains Mono', monospace";
+        ctx.textAlign = "right";
+        ctx.fillText(val.toLocaleString("pt-BR")+" ("+pct.toFixed(1)+"%)", PAD+colW-14, dy+9);
+        ctx.textAlign = "left";
+        dy += 19;
+      });
+      dy += 8;
+    });
+
+    // título direita: Departamento
+    const xR = PAD+colW+colGap;
+    ctx.fillStyle = COL.ink;
+    ctx.font = "700 13px 'Segoe UI', Arial, sans-serif";
+    ctx.fillText("Ocupação por Departamento", xR+14, y+24);
+    ctx.fillStyle = COL.inkFaint;
+    ctx.font = "400 10.5px 'Segoe UI', Arial, sans-serif";
+    ctx.fillText("Endereços ocupados, por classificação", xR+14, y+40);
+
+    drawHBarList(ctx, xR+14, y+58, colW-28, deptEntries, (l)=>DEPT_COL[l]||COL.amber, (label)=>deptTotalsImg[label], COL);
+
+    y += row1H + gridGap;
+
+    // --- ROW 2: Status | Espécie ---
+    drawPanelBg(ctx, PAD, y, colW, row2H, COL);
+    drawPanelBg(ctx, PAD+colW+colGap, y, colW, row2H, COL);
+
+    ctx.fillStyle = COL.ink;
+    ctx.font = "700 13px 'Segoe UI', Arial, sans-serif";
+    ctx.fillText("Status dos Endereços", PAD+14, y+24);
+    ctx.fillStyle = COL.inkFaint;
+    ctx.font = "400 10.5px 'Segoe UI', Arial, sans-serif";
+    ctx.fillText("Sem considerar endereços inativos", PAD+14, y+40);
+    drawHBarList(ctx, PAD+14, y+58, colW-28, statusEntries, (l)=>STATUS_COL[l]||COL.amber, total, COL);
+
+    ctx.fillStyle = COL.ink;
+    ctx.font = "700 13px 'Segoe UI', Arial, sans-serif";
+    ctx.fillText("Espécie de Endereço", xR+14, y+24);
+    ctx.fillStyle = COL.inkFaint;
+    ctx.font = "400 10.5px 'Segoe UI', Arial, sans-serif";
+    ctx.fillText("Apanha vs Pulmão (ocupados)", xR+14, y+40);
+    drawHBarList(ctx, xR+14, y+58, colW-28, especieEntries, (l)=>ESP_COL[l]||COL.violet, total, COL);
+
+    y += row2H + gridGap;
+
+    // footer
+    ctx.textAlign = "center";
+    ctx.fillStyle = COL.inkFaint;
+    ctx.font = "600 9.5px 'JetBrains Mono', monospace";
+    ctx.fillText("POSIÇÃO DE ENDEREÇOS · CD 107 · " + skus.toLocaleString("pt-BR") + " SKUS DISTINTOS OCUPADOS", W/2, y+10);
+    ctx.textAlign = "left";
+
+    // download
+    canvas.toBlob(function(blob){
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const dataFile = new Date().toISOString().slice(0,10);
+      a.href = url;
+      a.download = "resumo_estoque_cd107_" + dataFile + ".png";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, "image/png");
+  }
+
+  function roundRect(ctx, x, y, w, h, r){
+    r = Math.max(0, Math.min(r, w/2, h/2));
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.arcTo(x+w, y, x+w, y+h, r);
+    ctx.arcTo(x+w, y+h, x, y+h, r);
+    ctx.arcTo(x, y+h, x, y, r);
+    ctx.arcTo(x, y, x+w, y, r);
+    ctx.closePath();
+  }
+
+  function drawPanelBg(ctx, x, y, w, h, COL){
+    roundRect(ctx, x, y, w, h, 10);
+    ctx.fillStyle = COL.panel;
+    ctx.fill();
+    ctx.strokeStyle = COL.line;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  function drawHBarList(ctx, x, y, w, entries, colorFn, percentBase, COL){
+    if (entries.length === 0){
+      ctx.fillStyle = COL.inkFaint;
+      ctx.font = "400 11px 'Segoe UI', Arial, sans-serif";
+      ctx.fillText("Sem dados.", x, y+10);
+      return;
+    }
+    const max = Math.max(...entries.map(e=>e.value), 1);
+    const baseFn = typeof percentBase === "function"
+      ? percentBase
+      : () => (percentBase || entries.reduce((s,e)=>s+e.value,0) || 1);
+    const labelW = 118;
+    const valueW = 100;
+    const trackW = w - labelW - valueW;
+    let cy = y;
+    ctx.font = "500 11px 'Segoe UI', Arial, sans-serif";
+    entries.forEach(e => {
+      const base = baseFn(e.label) || 1;
+      const pct = (e.value/base*100);
+      ctx.fillStyle = COL.inkDim;
+      ctx.font = "500 11px 'Segoe UI', Arial, sans-serif";
+      let labelTrunc = e.label;
+      while (ctx.measureText(labelTrunc).width > labelW - 8 && labelTrunc.length > 3){
+        labelTrunc = labelTrunc.slice(0, -1);
+      }
+      if (labelTrunc !== e.label) labelTrunc = labelTrunc.slice(0,-1) + "…";
+      ctx.fillText(labelTrunc, x, cy+9);
+
+      roundRect(ctx, x+labelW, cy, trackW, 9, 3); ctx.fillStyle = COL.lineSoft; ctx.fill();
+      const fillW = Math.max(2, (e.value/max)*trackW);
+      roundRect(ctx, x+labelW, cy, fillW, 9, 3); ctx.fillStyle = colorFn(e.label); ctx.fill();
+
+      ctx.fillStyle = COL.inkFaint;
+      ctx.font = "600 10.5px 'JetBrains Mono', monospace";
+      ctx.textAlign = "right";
+      ctx.fillText(e.value.toLocaleString("pt-BR")+" ("+pct.toFixed(1)+"%)", x+w, cy+9);
+      ctx.textAlign = "left";
+      cy += 30;
+    });
+  }
+
+  document.getElementById("btnGerarImagem").addEventListener("click", gerarImagemResumo);
+
+})();
+</script>
+</body>
+</html>
