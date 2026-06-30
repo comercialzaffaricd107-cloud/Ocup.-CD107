@@ -152,6 +152,19 @@
   .kpi-card.c-reserv::before{ --accent: var(--violet); }
   .kpi-card.c-taxa::before{ --accent: var(--amber); }
 
+  .kpi-clickable{
+    cursor: pointer;
+    transition: border-color .15s, transform .05s, background .15s;
+  }
+  .kpi-clickable:hover{ border-color: var(--amber); background: var(--bg-panel-raised); }
+  .kpi-clickable:active{ transform: scale(.98); }
+  .kpi-active{
+    border-color: var(--amber);
+    background: var(--bg-panel-raised);
+    box-shadow: 0 0 0 1px var(--amber);
+  }
+  .kpi-active .kpi-label{ color: var(--amber); }
+
   .kpi-label{
     font-family:var(--mono); font-size:10.5px; text-transform:uppercase;
     letter-spacing:0.6px; color:var(--ink-faint); margin-bottom:8px;
@@ -296,6 +309,7 @@
 <div class="tabbar hidden" id="tabbar">
   <button class="tab-btn active" data-tab="resumo"><span class="tab-icon">▣</span> Resumo</button>
   <button class="tab-btn" data-tab="detalhado"><span class="tab-icon">▤</span> Detalhado</button>
+  <button class="tab-btn" data-tab="acuracidade"><span class="tab-icon">◎</span> Acuracidade Apanha</button>
 </div>
 
 <div class="shell">
@@ -442,6 +456,104 @@
   </div>
 </div>
 
+<!-- ===================== ABA ACURACIDADE APANHA ===================== -->
+<div class="tab-panel" id="tab-acuracidade">
+  <div class="shell">
+
+    <div class="empty-state" id="emptyStateAjustes">
+      <div class="icon">◎</div>
+      <h2>Importe o relatório de ajustes</h2>
+      <p>Clique em "Importar arquivo de ajustes" e selecione o .txt com os ajustes de estoque por produto<br>
+      (ex: Ajustes.txt). Os SKUs são cruzados automaticamente com os endereços de Apanha já carregados na posição de estoque.</p>
+      <label class="btn btn-primary" for="fileInputAjustes" style="font-size:13px; padding:11px 22px;">⭱ Selecionar arquivo</label>
+    </div>
+
+    <div class="hidden" id="acuracidadeContent">
+
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:18px;">
+        <div class="status-strip" id="statusStripAjustes" style="padding:0;">
+          <span><span class="dot live"></span><span id="statusTextAjustes"></span></span>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button class="btn" id="btnLimparCacheAjustes">✕ Limpar dados salvos</button>
+          <button class="btn btn-primary" id="btnGerarImagemAjustes">▣ Gerar imagem para compartilhar</button>
+          <label class="btn btn-primary" for="fileInputAjustes">⭱ Importar arquivo de ajustes</label>
+        </div>
+      </div>
+
+      <div class="kpi-row" id="kpiRowAcuracidade"></div>
+
+      <div class="panel-grid">
+        <div class="panel">
+          <div class="panel-title">Acurácia por Departamento</div>
+          <div class="panel-sub">Média simples da acurácia de cada SKU da área</div>
+          <div id="acDeptBars"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Distribuição de Acurácia</div>
+          <div class="panel-sub">Quantidade de SKUs em cada faixa</div>
+          <div id="acFaixaBars"></div>
+        </div>
+      </div>
+
+      <div class="panel-grid">
+        <div class="panel">
+          <div class="panel-title">Top 10 Maiores Ajustes Negativos <span class="tag">Falta</span></div>
+          <div class="panel-sub">Produtos com maior falta de estoque (ajuste negativo)</div>
+          <div id="acTopNegBars"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Top 10 Maiores Ajustes Positivos <span class="tag">Sobra</span></div>
+          <div class="panel-sub">Produtos com maior sobra de estoque (ajuste positivo)</div>
+          <div id="acTopPosBars"></div>
+        </div>
+      </div>
+
+      <div class="filters" id="filtersBarAcuracidade">
+        <div class="filter-group">
+          <label>Departamento</label>
+          <select id="fAcDepartamento"><option value="">Todos</option></select>
+        </div>
+        <div class="filter-group filter-search">
+          <label>Buscar código / descrição</label>
+          <input type="text" id="fAcBusca" placeholder="ex: 105897, vodka...">
+        </div>
+        <button class="clear-btn" id="btnClearAcuracidade">✕ Limpar filtros</button>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Acurácia por SKU de Apanha <span class="tag" id="acTableTag"></span></div>
+        <div class="panel-sub">
+          Acurácia = 100% − (|ajuste| ÷ qtd. estoque total) · considerando apenas SKUs que estão em endereço Apanha na posição de estoque atual. Estoque = soma de Apanha + Pulmão ocupados.
+          Clique nos cabeçalhos para ordenar.
+        </div>
+        <div class="table-wrap">
+          <table id="acTable">
+            <thead>
+              <tr>
+                <th data-key="codigo">Código</th>
+                <th data-key="produto">Produto</th>
+                <th data-key="departamento">Departamento</th>
+                <th data-key="qtdEstoque">Qtd Estoque</th>
+                <th data-key="qtdDiferenca">Qtd Ajuste</th>
+                <th data-key="acuracia">Acurácia</th>
+              </tr>
+            </thead>
+            <tbody id="acTableBody"></tbody>
+          </table>
+        </div>
+        <div class="table-foot">
+          <span id="acRowCountInfo"></span>
+          <span id="acPageInfo"></span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<input type="file" id="fileInputAjustes" accept=".txt,.csv" class="hidden">
+
 <footer>POSIÇÃO DE ENDEREÇOS · CD 107 · ATUALIZADO MANUALMENTE A PARTIR DO ARQUIVO WMS</footer>
 
 <div class="loading-overlay hidden" id="loadingOverlay">Processando arquivo...</div>
@@ -461,6 +573,11 @@
   let currentPage = 1;
   let lastFileName = "";
   let lastImportDate = null;
+
+  // estado da aba Acuracidade Apanha (declarado aqui no topo para evitar problemas de
+  // ordem de execução, já que processarTexto() referencia AJUSTES_RAW antes da seção
+  // onde a lógica completa daquela aba é definida)
+  let AJUSTES_RAW = [];
 
   const STATUS_ORDER = ["Ocupado","Disponivel","Reservado","Bloqueado"];
   const STATUS_LABELS = {
@@ -595,6 +712,7 @@
   // ============================================================
   const DB_NAME = "posicaoEstoqueCD107";
   const DB_STORE = "ultimoArquivo";
+  const DB_STORE_AJUSTES = "ultimoArquivoAjustes";
   let dbPromise = null;
 
   function openDB(){
@@ -602,7 +720,9 @@
     dbPromise = new Promise((resolve, reject) => {
       const req = indexedDB.open(DB_NAME, 1);
       req.onupgradeneeded = () => {
-        req.result.createObjectStore(DB_STORE);
+        const db = req.result;
+        if (!db.objectStoreNames.contains(DB_STORE)) db.createObjectStore(DB_STORE);
+        if (!db.objectStoreNames.contains(DB_STORE_AJUSTES)) db.createObjectStore(DB_STORE_AJUSTES);
       };
       req.onsuccess = () => resolve(req.result);
       req.onerror = () => reject(req.error);
@@ -691,6 +811,13 @@
     detalhadoContent.classList.remove("hidden");
     updateStatusStrip();
 
+    // se já houver arquivo de ajustes carregado, recalcula o cruzamento com a posição nova
+    if (AJUSTES_RAW.length > 0){
+      cruzarAcuracidadeApanha();
+      initFiltersAcuracidade();
+      applyFiltersAcuracidade();
+    }
+
     if (persistir) salvarUltimoArquivo(fileName, importDate, text);
     return true;
   }
@@ -732,7 +859,7 @@
   // ============================================================
   // RESTAURAÇÃO AUTOMÁTICA DO ÚLTIMO ARQUIVO SALVO (ao abrir a página)
   // ============================================================
-  (async function restaurarUltimoArquivo(){
+  const restauracaoPrincipalPromise = (async function restaurarUltimoArquivo(){
     const salvo = await carregarUltimoArquivo();
     if (!salvo || !salvo.text) return;
     try{
@@ -895,6 +1022,27 @@
   // (label) => número, quando cada barra tem sua própria base (ex: % de ocupação
   // de cada departamento sobre o total de endereços daquele mesmo departamento).
   // Se omitido, usa a soma dos próprios valores da lista (percentual de composição).
+  // Versão sem percentual — para listas onde só o valor absoluto importa (ex: top ajustes)
+  function renderBarListSimple(containerId, entries, colorFn, maxBars){
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    if (entries.length === 0){
+      container.innerHTML = '<div style="color:var(--ink-faint); font-size:12.5px; padding:8px 0;">Sem dados para o filtro atual.</div>';
+      return;
+    }
+    const list = maxBars ? entries.slice(0, maxBars) : entries;
+    const max = Math.max(...list.map(e => e.value), 1);
+    container.innerHTML = list.map(e => `
+      <div class="bar-row">
+        <div class="bar-label" title="${e.label}">${e.label}</div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:${(e.value/max*100).toFixed(1)}%; background:${colorFn(e.label)};"></div>
+        </div>
+        <div class="bar-value">${e.value.toLocaleString("pt-BR")}${e.unidade ? " " + e.unidade : ""}</div>
+      </div>
+    `).join("");
+  }
+
   function renderBarList(containerId, entries, colorFn, maxBars, percentBase){
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -1494,6 +1642,722 @@
   }
 
   document.getElementById("btnGerarImagem").addEventListener("click", gerarImagemResumo);
+
+  // ============================================================
+  // ABA ACURACIDADE APANHA
+  // ============================================================
+  let AC_DATA = [];          // resultado do cruzamento: SKUs de Apanha + seu ajuste
+  let AC_FILTERED = [];
+  let acSortKey = "acuracia";
+  let acSortDir = 1;
+  let acCurrentPage = 1;
+  let lastFileNameAjustes = "";
+  let lastImportDateAjustes = null;
+
+  async function salvarUltimoArquivoAjustes(fileName, importDate, text){
+    try{
+      const db = await openDB();
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction(DB_STORE_AJUSTES, "readwrite");
+        tx.objectStore(DB_STORE_AJUSTES).put({ fileName, importDate: importDate.toISOString(), text }, "ultimo");
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error);
+      });
+    } catch(err){ console.warn("Não foi possível salvar o arquivo de ajustes:", err); }
+  }
+
+  async function carregarUltimoArquivoAjustes(){
+    try{
+      const db = await openDB();
+      return await new Promise((resolve, reject) => {
+        const tx = db.transaction(DB_STORE_AJUSTES, "readonly");
+        const req = tx.objectStore(DB_STORE_AJUSTES).get("ultimo");
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror = () => reject(req.error);
+      });
+    } catch(err){ console.warn("Não foi possível carregar o arquivo de ajustes salvo:", err); return null; }
+  }
+
+  async function limparUltimoArquivoAjustes(){
+    try{
+      const db = await openDB();
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction(DB_STORE_AJUSTES, "readwrite");
+        tx.objectStore(DB_STORE_AJUSTES).delete("ultimo");
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error);
+      });
+    } catch(err){ console.warn("Não foi possível limpar o arquivo de ajustes:", err); }
+  }
+
+  // Números no arquivo de ajustes vêm em formato BR: milhar com ponto, decimal com vírgula
+  // (ex: "1.234,567" = 1234.567; "-79,000" = -79).
+  function parseNumeroBR(str){
+    if (!str) return 0;
+    const limpo = str.trim().replace(/\./g, "").replace(",", ".");
+    const n = parseFloat(limpo);
+    return isNaN(n) ? 0 : n;
+  }
+
+  function parseAjustesCSV(text){
+    const lines = text.split(/\r\n|\r|\n/).filter(l => l.length > 0);
+    if (lines.length < 2) return [];
+    const header = lines[0].split(";").map(h => h.trim());
+    const idx = {};
+    header.forEach((h,i) => idx[h] = i);
+
+    const colCodigo = idx["Código Produto"];
+    const colProduto = idx["Produto"];
+    const colQtdSaidaVenda = idx["Qtd Saída Venda"];
+    const colQtdSaidaOutras = idx["Qtd Saída Outras"];
+    const colQtdDiferenca = idx["Qtd Diferenca"];
+
+    if (colCodigo === undefined || colQtdDiferenca === undefined){
+      return null; // formato não reconhecido
+    }
+
+    const out = [];
+    for (let i=1; i<lines.length; i++){
+      const cols = lines[i].split(";");
+      if (cols.length < 3) continue;
+      const codigo = (cols[colCodigo]||"").trim();
+      if (!codigo) continue;
+      const produto = (cols[colProduto]||"").trim().replace(/^\*/, "");
+      const qtdSaidaVenda = parseNumeroBR(cols[colQtdSaidaVenda]);
+      const qtdSaidaOutras = parseNumeroBR(cols[colQtdSaidaOutras]);
+      const qtdDiferenca = parseNumeroBR(cols[colQtdDiferenca]);
+      out.push({
+        codigo,
+        produto,
+        qtdSaida: qtdSaidaVenda + qtdSaidaOutras,
+        qtdDiferenca
+      });
+    }
+    return out;
+  }
+
+  // Cruza os ajustes com os SKUs que estão em endereço de Apanha na posição de estoque atual.
+  function cruzarAcuracidadeApanha(){
+    if (ACTIVE_DATA.length === 0 || AJUSTES_RAW.length === 0){
+      AC_DATA = [];
+      return;
+    }
+    // mapa código -> departamento, considerando apenas registros de Apanha
+    const skuApanha = new Map(); // codigo -> {departamento, descricao}
+    ACTIVE_DATA.forEach(r => {
+      if (r.ESPECIE_END === "Apanha" && r.temProduto){
+        if (!skuApanha.has(r.CODIGO)){
+          skuApanha.set(r.CODIGO, { departamento: r.DEPARTAMENTO, descricao: r.DESCRICAO });
+        }
+      }
+    });
+
+    // estoque total por código: soma de QTD_END de todos os endereços OCUPADOS daquele
+    // código, somando Apanha + Pulmão juntos (estoque físico atual do produto).
+    const estoquePorCodigo = new Map();
+    ACTIVE_DATA.forEach(r => {
+      if (r.temProduto && r.ESTATUS_ENDERECO === "Ocupado"){
+        estoquePorCodigo.set(r.CODIGO, (estoquePorCodigo.get(r.CODIGO) || 0) + r.QTD_END);
+      }
+    });
+
+    const ajustesPorCodigo = new Map();
+    AJUSTES_RAW.forEach(a => ajustesPorCodigo.set(a.codigo, a));
+
+    const out = [];
+    skuApanha.forEach((info, codigo) => {
+      const ajuste = ajustesPorCodigo.get(codigo);
+      if (!ajuste) return; // SKU de Apanha sem registro no arquivo de ajustes — não entra na análise
+      const qtdDiferenca = ajuste.qtdDiferenca;
+      if (qtdDiferenca === 0) return; // sem ajuste no período — não entra na análise (evita diluir a métrica)
+      const qtdEstoque = estoquePorCodigo.get(codigo) || 0;
+      let acuracia;
+      let suspeito = false; // ajuste maior que o próprio estoque: provável erro de cadastro/contagem
+      if (qtdEstoque > 0){
+        acuracia = Math.max(0, 100 - (Math.abs(qtdDiferenca) / qtdEstoque * 100));
+        suspeito = Math.abs(qtdDiferenca) > qtdEstoque;
+      } else {
+        acuracia = null; // ajuste existe mas não há estoque registrado — sem base de cálculo
+        suspeito = true;
+      }
+      out.push({
+        codigo,
+        produto: ajuste.produto || info.descricao || "",
+        departamento: info.departamento,
+        qtdEstoque,
+        qtdDiferenca,
+        acuracia,
+        suspeito
+      });
+    });
+    AC_DATA = out;
+  }
+
+  const fileInputAjustes = document.getElementById("fileInputAjustes");
+  const emptyStateAjustes = document.getElementById("emptyStateAjustes");
+  const acuracidadeContent = document.getElementById("acuracidadeContent");
+  const statusTextAjustes = document.getElementById("statusTextAjustes");
+
+  function processarTextoAjustes(text, fileName, importDate, persistir){
+    const parsed = parseAjustesCSV(text);
+    if (parsed === null){
+      alert("Não reconheci o formato deste arquivo. Confira se é o relatório de ajustes (com colunas 'Código Produto' e 'Qtd Diferenca').");
+      return false;
+    }
+    AJUSTES_RAW = parsed;
+    lastFileNameAjustes = fileName;
+    lastImportDateAjustes = importDate;
+
+    cruzarAcuracidadeApanha();
+    initFiltersAcuracidade();
+    applyFiltersAcuracidade();
+
+    emptyStateAjustes.classList.add("hidden");
+    acuracidadeContent.classList.remove("hidden");
+    updateStatusStripAjustes();
+
+    if (persistir) salvarUltimoArquivoAjustes(fileName, importDate, text);
+    return true;
+  }
+
+  function updateStatusStripAjustes(origemCache){
+    const dt = lastImportDateAjustes;
+    const dataStr = dt.toLocaleDateString("pt-BR") + " às " + dt.toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"});
+    const origemTxt = origemCache ? " · carregado automaticamente (última importação salva)" : "";
+    statusTextAjustes.textContent = lastFileNameAjustes + " · importado em " + dataStr + " · " + AC_DATA.length.toLocaleString("pt-BR") + " SKUs de Apanha cruzados" + origemTxt;
+  }
+
+  fileInputAjustes.addEventListener("change", function(e){
+    const file = e.target.files[0];
+    if (!file) return;
+    loadingOverlay.classList.remove("hidden");
+    const reader = new FileReader();
+    reader.onload = function(ev){
+      try{
+        const text = decodeFileBuffer(ev.target.result);
+        processarTextoAjustes(text, file.name, new Date(), true);
+      } catch(err){
+        console.error(err);
+        alert("Erro ao processar o arquivo de ajustes: " + err.message);
+      } finally {
+        loadingOverlay.classList.add("hidden");
+      }
+    };
+    reader.onerror = function(){
+      alert("Não foi possível ler o arquivo selecionado.");
+      loadingOverlay.classList.add("hidden");
+    };
+    reader.readAsArrayBuffer(file);
+  });
+
+  document.getElementById("btnLimparCacheAjustes").addEventListener("click", async () => {
+    if (!confirm("Isso remove o arquivo de ajustes salvo localmente. Confirma?")) return;
+    await limparUltimoArquivoAjustes();
+    alert("Dados de ajustes removidos.");
+  });
+
+  // restauração automática do arquivo de ajustes — espera a posição de estoque
+  // (ACTIVE_DATA) terminar de restaurar primeiro, já que o cruzamento depende dela.
+  (async function restaurarUltimoArquivoAjustes(){
+    await restauracaoPrincipalPromise;
+    const salvo = await carregarUltimoArquivoAjustes();
+    if (!salvo || !salvo.text) return;
+    try{
+      const ok = processarTextoAjustes(salvo.text, salvo.fileName, new Date(salvo.importDate), false);
+      if (ok) updateStatusStripAjustes(true);
+    } catch(err){ console.warn("Não foi possível restaurar o arquivo de ajustes:", err); }
+  })();
+
+  // ----- filtros da aba -----
+  const fAcDepartamento = document.getElementById("fAcDepartamento");
+  const fAcBusca = document.getElementById("fAcBusca");
+  const btnClearAcuracidade = document.getElementById("btnClearAcuracidade");
+  let acCardFiltro = null; // "criticos" | "suspeito" | "positivo" | "negativo" | null
+
+  function initFiltersAcuracidade(){
+    fillSelect(fAcDepartamento, uniqueSorted(AC_DATA.map(d => d.departamento)), fAcDepartamento.value);
+  }
+  fAcDepartamento.addEventListener("change", () => { acCurrentPage = 1; applyFiltersAcuracidade(); });
+  let acBuscaTimeout;
+  fAcBusca.addEventListener("input", () => {
+    clearTimeout(acBuscaTimeout);
+    acBuscaTimeout = setTimeout(() => { acCurrentPage = 1; applyFiltersAcuracidade(); }, 220);
+  });
+  btnClearAcuracidade.addEventListener("click", () => {
+    fAcDepartamento.value = ""; fAcBusca.value = ""; acCardFiltro = null;
+    acCurrentPage = 1;
+    applyFiltersAcuracidade();
+  });
+
+  function setAcCardFiltro(novoFiltro){
+    acCardFiltro = (acCardFiltro === novoFiltro) ? null : novoFiltro; // clicar de novo no mesmo card desfaz
+    acCurrentPage = 1;
+    applyFiltersAcuracidade();
+  }
+
+  function applyFiltersAcuracidade(){
+    const dpto = fAcDepartamento.value;
+    const busca = fAcBusca.value.trim().toLowerCase();
+    AC_FILTERED = AC_DATA.filter(r => {
+      if (dpto && r.departamento !== dpto) return false;
+      if (busca){
+        const hay = (r.codigo + " " + r.produto).toLowerCase();
+        if (hay.indexOf(busca) === -1) return false;
+      }
+      if (acCardFiltro === "criticos" && !(r.acuracia !== null && r.acuracia < 90)) return false;
+      if (acCardFiltro === "suspeito" && !r.suspeito) return false;
+      if (acCardFiltro === "positivo" && !(r.qtdDiferenca > 0)) return false;
+      if (acCardFiltro === "negativo" && !(r.qtdDiferenca < 0)) return false;
+      return true;
+    });
+    renderKPIsAcuracidade();
+    renderChartsAcuracidade();
+    renderTableAcuracidade();
+  }
+
+  function renderKPIsAcuracidade(){
+    const total = AC_FILTERED.length;
+    const comBase = AC_FILTERED.filter(r => r.acuracia !== null);
+    // Acurácia Total: média simples da acurácia individual de cada SKU
+    // (100% − |ajuste| ÷ estoque, por produto). Cada SKU pesa igual, independente
+    // do tamanho do seu estoque — diferente de uma média ponderada por volume.
+    const acuraciaTotal = comBase.length > 0
+      ? comBase.reduce((s,r) => s + r.acuracia, 0) / comBase.length
+      : 100;
+    const totalAjustePositivo = AC_FILTERED.filter(r => r.qtdDiferenca > 0).reduce((s,r) => s + r.qtdDiferenca, 0);
+    const totalAjusteNegativo = AC_FILTERED.filter(r => r.qtdDiferenca < 0).reduce((s,r) => s + r.qtdDiferenca, 0);
+    const skusCriticos = comBase.filter(r => r.acuracia < 90).length;
+    const skusSuspeitos = AC_FILTERED.filter(r => r.suspeito).length;
+
+    const cards = [
+      {cls:"c-total",   label:"SKUs com Ajuste", value: total.toLocaleString("pt-BR"), foot: "Apanha, no período do arquivo", filterKey: null},
+      {cls:"c-taxa",    label:"Acurácia Total", value: acuraciaTotal.toFixed(1) + "%", foot: "média de 100% − (|ajuste| ÷ estoque) por SKU", filterKey: null},
+      {cls:"c-bloq",    label:"SKUs Críticos", value: skusCriticos.toLocaleString("pt-BR"), foot: "acurácia < 90% · clique para filtrar", filterKey: "criticos"},
+      {cls:"c-reserv",  label:"Ajuste &gt; Estoque (suspeito)", value: skusSuspeitos.toLocaleString("pt-BR"), foot: "provável erro de cadastro/contagem · clique para filtrar", filterKey: "suspeito"},
+      {cls:"c-disp",    label:"Ajuste Positivo (sobra)", value: "+" + totalAjustePositivo.toLocaleString("pt-BR"), foot: "soma de unidades · clique para filtrar", filterKey: "positivo"},
+      {cls:"c-ocupado", label:"Ajuste Negativo (falta)", value: totalAjusteNegativo.toLocaleString("pt-BR"), foot: "soma de unidades · clique para filtrar", filterKey: "negativo"},
+    ];
+    document.getElementById("kpiRowAcuracidade").innerHTML = cards.map(c => {
+      const clicavel = c.filterKey !== null;
+      const ativo = clicavel && acCardFiltro === c.filterKey;
+      const classes = "kpi-card " + c.cls + (clicavel ? " kpi-clickable" : "") + (ativo ? " kpi-active" : "");
+      const dataAttr = clicavel ? ` data-filter-key="${c.filterKey}"` : "";
+      return `
+      <div class="${classes}"${dataAttr}>
+        <div class="kpi-label">${c.label}</div>
+        <div class="kpi-value">${c.value}</div>
+        <div class="kpi-foot">${c.foot}</div>
+      </div>`;
+    }).join("");
+    document.querySelectorAll('#kpiRowAcuracidade .kpi-clickable').forEach(el => {
+      el.addEventListener("click", () => setAcCardFiltro(el.dataset.filterKey));
+    });
+  }
+
+  // ----- gráficos da aba Acuracidade -----
+  const FAIXA_COLORS = {
+    "Ótimo (≥99%)": "var(--green)",
+    "Bom (90-99%)": "var(--amber)",
+    "Crítico (&lt;90%)": "var(--red)",
+    "N/A": "var(--ink-faint)"
+  };
+
+  function computeAcDeptEntries(data){
+    // acurácia por departamento: média simples da acurácia individual de cada SKU
+    // daquele departamento (cada produto pesa igual, independente do seu estoque).
+    const porDepto = {};
+    data.forEach(r => {
+      if (r.acuracia === null) return; // sem base de cálculo, não entra na média
+      if (!porDepto[r.departamento]) porDepto[r.departamento] = { soma: 0, qtd: 0 };
+      porDepto[r.departamento].soma += r.acuracia;
+      porDepto[r.departamento].qtd += 1;
+    });
+    return Object.entries(porDepto)
+      .map(([k,v]) => ({
+        label: k,
+        value: v.qtd > 0 ? v.soma / v.qtd : 0,
+        qtdSkus: v.qtd
+      }))
+      .sort((a,b) => a.value - b.value);
+  }
+
+  function computeAcFaixaEntries(data){
+    const faixas = { "Ótimo (≥99%)": 0, "Bom (90-99%)": 0, "Crítico (&lt;90%)": 0, "N/A": 0 };
+    data.forEach(r => {
+      if (r.acuracia === null) faixas["N/A"]++;
+      else if (r.acuracia >= 99) faixas["Ótimo (≥99%)"]++;
+      else if (r.acuracia >= 90) faixas["Bom (90-99%)"]++;
+      else faixas["Crítico (&lt;90%)"]++;
+    });
+    return Object.entries(faixas).filter(([,v]) => v > 0).map(([k,v]) => ({label:k, value:v}));
+  }
+
+  // Detecta se o produto é vendido por peso (KG) pelo próprio nome — o arquivo de
+  // ajustes não traz uma coluna de unidade de medida explícita.
+  function detectaUnidade(nomeProduto){
+    return /\bKG\b/i.test(nomeProduto || "") ? "kg" : "un";
+  }
+
+  function computeAcTopAjustes(data, positivo){
+    return data
+      .filter(r => positivo ? r.qtdDiferenca > 0 : r.qtdDiferenca < 0)
+      .sort((a,b) => positivo ? b.qtdDiferenca - a.qtdDiferenca : a.qtdDiferenca - b.qtdDiferenca)
+      .slice(0, 10)
+      .map(r => ({ label: r.produto || r.codigo, value: Math.abs(r.qtdDiferenca), unidade: detectaUnidade(r.produto) }));
+  }
+
+  // Gráfico de acurácia por departamento: aqui o "value" já É o percentual,
+  // então cada barra mostra o próprio valor formatado como % (sem outra divisão).
+  function renderAcDeptBars(containerId, entries){
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    if (entries.length === 0){
+      container.innerHTML = '<div style="color:var(--ink-faint); font-size:12.5px; padding:8px 0;">Sem dados para o filtro atual.</div>';
+      return;
+    }
+    container.innerHTML = entries.map(e => {
+      const color = e.value >= 99 ? "var(--green)" : (e.value >= 90 ? "var(--amber)" : "var(--red)");
+      return `
+      <div class="bar-row">
+        <div class="bar-label" title="${e.label}">${e.label}</div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:${e.value.toFixed(1)}%; background:${color};"></div>
+        </div>
+        <div class="bar-value">${e.value.toFixed(1)}%</div>
+      </div>
+    `;
+    }).join("");
+  }
+
+  function renderChartsAcuracidade(){
+    renderAcDeptBars("acDeptBars", computeAcDeptEntries(AC_FILTERED));
+
+    const faixaEntries = computeAcFaixaEntries(AC_FILTERED);
+    renderBarList("acFaixaBars", faixaEntries, (label) => FAIXA_COLORS[label] || "var(--violet)", null, AC_FILTERED.length);
+
+    renderBarListSimple("acTopNegBars", computeAcTopAjustes(AC_FILTERED, false), () => "var(--red)", 10);
+    renderBarListSimple("acTopPosBars", computeAcTopAjustes(AC_FILTERED, true), () => "var(--green)", 10);
+  }
+
+  function acuraciaColor(acuracia){
+    if (acuracia === null) return "var(--ink-faint)";
+    if (acuracia >= 99.9) return "var(--green)";
+    if (acuracia >= 90) return "var(--amber)";
+    return "var(--red)";
+  }
+
+  function acTableRowHTML(r){
+    const acTxt = r.acuracia === null ? "N/A" : r.acuracia.toFixed(1) + "%";
+    const acColor = acuraciaColor(r.acuracia);
+    const diffColor = r.qtdDiferenca > 0 ? "var(--green)" : (r.qtdDiferenca < 0 ? "var(--red)" : "var(--ink-faint)");
+    const diffTxt = (r.qtdDiferenca > 0 ? "+" : "") + r.qtdDiferenca.toLocaleString("pt-BR");
+    const suspeitoTag = r.suspeito ? ' <span class="badge" style="background:var(--amber-dim); color:var(--amber);" title="Ajuste maior que o estoque total — provável erro de cadastro/contagem">⚠ suspeito</span>' : '';
+    return `
+      <tr>
+        <td class="codigo">${r.codigo}</td>
+        <td title="${r.produto}">${r.produto || "—"}</td>
+        <td>${r.departamento}</td>
+        <td class="num">${r.qtdEstoque.toLocaleString("pt-BR")}</td>
+        <td class="num" style="color:${diffColor}; font-weight:600;">${diffTxt}</td>
+        <td style="color:${acColor}; font-weight:700; font-family:var(--mono); white-space:normal;">${acTxt}${suspeitoTag}</td>
+      </tr>
+    `;
+  }
+
+  function sortedAcuracidade(){
+    let data = AC_FILTERED;
+    data = data.slice().sort((a,b) => {
+      if (acSortKey === "acuracia"){
+        // N/A sempre por último, independente da direção da ordenação
+        if (a.acuracia === null && b.acuracia === null) return 0;
+        if (a.acuracia === null) return 1;
+        if (b.acuracia === null) return -1;
+        return (a.acuracia - b.acuracia) * acSortDir;
+      }
+      let av = a[acSortKey], bv = b[acSortKey];
+      if (acSortKey === "qtdEstoque" || acSortKey === "qtdDiferenca"){
+        av = av || 0; bv = bv || 0;
+      } else {
+        av = (av||"").toString().toLowerCase(); bv = (bv||"").toString().toLowerCase();
+      }
+      if (av < bv) return -1*acSortDir;
+      if (av > bv) return 1*acSortDir;
+      return 0;
+    });
+    return data;
+  }
+
+  function renderTableAcuracidade(){
+    acCurrentPage = 1;
+    const data = sortedAcuracidade();
+    const totalRows = data.length;
+    const totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
+    const pageData = data.slice(0, PAGE_SIZE);
+    document.getElementById("acTableBody").innerHTML = pageData.map(acTableRowHTML).join("");
+    document.getElementById("acRowCountInfo").textContent = totalRows.toLocaleString("pt-BR") + " SKUs encontrados";
+    document.getElementById("acPageInfo").textContent = totalPages > 1
+      ? ("Mostrando " + pageData.length.toLocaleString("pt-BR") + " de " + totalRows.toLocaleString("pt-BR") + " · role para carregar mais")
+      : (pageData.length.toLocaleString("pt-BR") + " linhas");
+    document.getElementById("acTableTag").textContent = totalRows.toLocaleString("pt-BR") + " registros";
+    document.querySelectorAll("#acTable thead th").forEach(th => {
+      th.classList.remove("sorted-asc","sorted-desc");
+      if (th.dataset.key === acSortKey) th.classList.add(acSortDir === 1 ? "sorted-asc" : "sorted-desc");
+    });
+  }
+
+  document.querySelectorAll("#acTable thead th").forEach(th => {
+    th.addEventListener("click", () => {
+      const key = th.dataset.key;
+      if (acSortKey === key) acSortDir *= -1;
+      else { acSortKey = key; acSortDir = 1; }
+      renderTableAcuracidade();
+    });
+  });
+
+  const acTableWrap = document.querySelector("#acTable").closest(".table-wrap");
+  acTableWrap.addEventListener("scroll", () => {
+    if (acTableWrap.scrollTop + acTableWrap.clientHeight >= acTableWrap.scrollHeight - 60){
+      const data = sortedAcuracidade();
+      const totalPages = Math.max(1, Math.ceil(data.length / PAGE_SIZE));
+      if (acCurrentPage < totalPages){
+        acCurrentPage++;
+        const start = (acCurrentPage-1)*PAGE_SIZE;
+        const pageData = data.slice(start, start+PAGE_SIZE);
+        document.getElementById("acTableBody").insertAdjacentHTML("beforeend", pageData.map(acTableRowHTML).join(""));
+        const shown = Math.min(acCurrentPage*PAGE_SIZE, data.length);
+        document.getElementById("acPageInfo").textContent = totalPages > acCurrentPage
+          ? ("Mostrando " + shown.toLocaleString("pt-BR") + " de " + data.length.toLocaleString("pt-BR") + " · role para carregar mais")
+          : ("Mostrando todas as " + data.length.toLocaleString("pt-BR") + " linhas");
+      }
+    }
+  });
+
+  // ============================================================
+  // GERAR IMAGEM DA ABA ACURACIDADE APANHA (canvas nativo)
+  // ============================================================
+  function gerarImagemAcuracidade(){
+    if (AC_DATA.length === 0){
+      alert("Importe o arquivo de ajustes antes de gerar a imagem.");
+      return;
+    }
+
+    const W = 900;
+    const PAD = 36;
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
+    const COL = {
+      bg: "#1e3a5f", panel: "#234468", line: "#36608f", lineSoft:"#2d5580",
+      ink: "#eef3f9", inkDim: "#aec3da", inkFaint: "#7d9bbd",
+      amber: "#f0a83c", green: "#5fc28a", red: "#ef7763", violet: "#b3a3e8", blue: "#6fb1e8"
+    };
+
+    // recalcula os mesmos dados já usados na tela (usa AC_FILTERED, respeitando filtro atual)
+    const total = AC_FILTERED.length;
+    const comBaseImg = AC_FILTERED.filter(r => r.acuracia !== null);
+    const acuraciaTotal = comBaseImg.length > 0
+      ? comBaseImg.reduce((s,r) => s + r.acuracia, 0) / comBaseImg.length
+      : 100;
+    const skusCriticos = AC_FILTERED.filter(r => r.acuracia !== null && r.acuracia < 90).length;
+    const skusSuspeitos = AC_FILTERED.filter(r => r.suspeito).length;
+
+    const deptEntries = computeAcDeptEntries(AC_FILTERED);
+    const faixaEntries = computeAcFaixaEntries(AC_FILTERED);
+    const topNeg = computeAcTopAjustes(AC_FILTERED, false);
+    const topPos = computeAcTopAjustes(AC_FILTERED, true);
+
+    const dt = lastImportDateAjustes;
+    const dataStr = dt.toLocaleDateString("pt-BR") + " às " + dt.toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"});
+
+    const headerH = 110;
+    const kpiH = 100;
+    const deptH = 58 + Math.max(deptEntries.length, 1) * 30 + 4;
+    const faixaH = 58 + Math.max(faixaEntries.length, 1) * 30 + 4;
+    const row1H = Math.max(deptH, faixaH);
+    const negH = 58 + Math.max(topNeg.length, 1) * 26 + 4;
+    const posH = 58 + Math.max(topPos.length, 1) * 26 + 4;
+    const row2H = Math.max(negH, posH);
+    const footerH = 40;
+
+    const H = headerH + kpiH + row1H + row2H + footerH + PAD*2;
+    canvas.width = W;
+    canvas.height = H;
+
+    ctx.fillStyle = COL.bg;
+    ctx.fillRect(0,0,W,H);
+
+    let y = PAD;
+    ctx.textAlign = "center";
+    ctx.fillStyle = COL.ink;
+    ctx.font = "700 22px 'Segoe UI', Arial, sans-serif";
+    ctx.fillText("Acuracidade Apanha · CD 107", W/2, y + 24);
+    ctx.fillStyle = COL.inkFaint;
+    ctx.font = "500 12px 'JetBrains Mono', monospace";
+    ctx.fillText("Atualizado em " + dataStr, W/2, y + 46);
+    ctx.textAlign = "left";
+    y += headerH - 20;
+
+    const kpis = [
+      {label:"SKUs c/ Ajuste", value: total.toLocaleString("pt-BR"), accent: COL.blue},
+      {label:"Acurácia Total", value: acuraciaTotal.toFixed(1)+"%", accent: COL.amber},
+      {label:"SKUs Críticos", value: skusCriticos.toLocaleString("pt-BR"), accent: COL.red},
+      {label:"Suspeitos", value: skusSuspeitos.toLocaleString("pt-BR"), accent: COL.violet},
+    ];
+    const kpiGap = 10;
+    const kpiW = (W - PAD*2 - kpiGap*3) / 4;
+    kpis.forEach((k, i) => {
+      const x = PAD + i*(kpiW+kpiGap);
+      roundRect(ctx, x, y, kpiW, kpiH-10, 8);
+      ctx.fillStyle = COL.panel;
+      ctx.fill();
+      ctx.fillStyle = k.accent;
+      ctx.fillRect(x, y, kpiW, 2.5);
+      ctx.fillStyle = COL.inkFaint;
+      ctx.font = "700 9px 'JetBrains Mono', monospace";
+      ctx.fillText(k.label, x+10, y+22);
+      ctx.fillStyle = COL.ink;
+      ctx.font = "700 19px 'JetBrains Mono', monospace";
+      ctx.fillText(k.value, x+10, y+50);
+    });
+    y += kpiH + 6;
+
+    const colGap = 16;
+    const colW = (W - PAD*2 - colGap) / 2;
+    const xR = PAD+colW+colGap;
+
+    drawPanelBg(ctx, PAD, y, colW, row1H, COL);
+    drawPanelBg(ctx, xR, y, colW, row1H, COL);
+
+    ctx.fillStyle = COL.ink;
+    ctx.font = "700 13px 'Segoe UI', Arial, sans-serif";
+    ctx.fillText("Acurácia por Departamento", PAD+14, y+24);
+    ctx.fillStyle = COL.inkFaint;
+    ctx.font = "400 10.5px 'Segoe UI', Arial, sans-serif";
+    ctx.fillText("Média simples da acurácia de cada SKU", PAD+14, y+40);
+    drawAcDeptBarsCanvas(ctx, PAD+14, y+58, colW-28, deptEntries, COL);
+
+    ctx.fillStyle = COL.ink;
+    ctx.font = "700 13px 'Segoe UI', Arial, sans-serif";
+    ctx.fillText("Distribuição de Acurácia", xR+14, y+24);
+    ctx.fillStyle = COL.inkFaint;
+    ctx.font = "400 10.5px 'Segoe UI', Arial, sans-serif";
+    ctx.fillText("Quantidade de SKUs em cada faixa", xR+14, y+40);
+    const faixaColCanvas = { "Ótimo (≥99%)": COL.green, "Bom (90-99%)": COL.amber, "Crítico (<90%)": COL.red, "N/A": COL.inkFaint };
+    drawHBarList(ctx, xR+14, y+58, colW-28, faixaEntries.map(e => ({label: e.label.replace("&lt;","<"), value: e.value})), (l)=>faixaColCanvas[l]||COL.violet, total, COL);
+
+    y += row1H + colGap;
+
+    drawPanelBg(ctx, PAD, y, colW, row2H, COL);
+    drawPanelBg(ctx, xR, y, colW, row2H, COL);
+
+    ctx.fillStyle = COL.ink;
+    ctx.font = "700 13px 'Segoe UI', Arial, sans-serif";
+    ctx.fillText("Top 10 Ajustes Negativos (Falta)", PAD+14, y+24);
+    ctx.fillStyle = COL.inkFaint;
+    ctx.font = "400 10.5px 'Segoe UI', Arial, sans-serif";
+    ctx.fillText("Maior falta de estoque", PAD+14, y+40);
+    drawSimpleBarsCanvas(ctx, PAD+14, y+58, colW-28, topNeg, COL.red, COL);
+
+    ctx.fillStyle = COL.ink;
+    ctx.font = "700 13px 'Segoe UI', Arial, sans-serif";
+    ctx.fillText("Top 10 Ajustes Positivos (Sobra)", xR+14, y+24);
+    ctx.fillStyle = COL.inkFaint;
+    ctx.font = "400 10.5px 'Segoe UI', Arial, sans-serif";
+    ctx.fillText("Maior sobra de estoque", xR+14, y+40);
+    drawSimpleBarsCanvas(ctx, xR+14, y+58, colW-28, topPos, COL.green, COL);
+
+    y += row2H + colGap;
+
+    ctx.textAlign = "center";
+    ctx.fillStyle = COL.inkFaint;
+    ctx.font = "600 9.5px 'JetBrains Mono', monospace";
+    ctx.fillText("ACURACIDADE APANHA · CD 107 · " + total.toLocaleString("pt-BR") + " SKUS ANALISADOS", W/2, y+10);
+    ctx.textAlign = "left";
+
+    canvas.toBlob(function(blob){
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const dataFile = new Date().toISOString().slice(0,10);
+      a.href = url;
+      a.download = "acuracidade_apanha_cd107_" + dataFile + ".png";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, "image/png");
+  }
+
+  function drawAcDeptBarsCanvas(ctx, x, y, w, entries, COL){
+    if (entries.length === 0){
+      ctx.fillStyle = COL.inkFaint;
+      ctx.font = "400 11px 'Segoe UI', Arial, sans-serif";
+      ctx.fillText("Sem dados.", x, y+10);
+      return;
+    }
+    const labelW = 118;
+    const valueW = 60;
+    const trackW = w - labelW - valueW;
+    let cy = y;
+    entries.forEach(e => {
+      const color = e.value >= 99 ? COL.green : (e.value >= 90 ? COL.amber : COL.red);
+      ctx.fillStyle = COL.inkDim;
+      ctx.font = "500 11px 'Segoe UI', Arial, sans-serif";
+      let labelTrunc = e.label;
+      while (ctx.measureText(labelTrunc).width > labelW - 8 && labelTrunc.length > 3){
+        labelTrunc = labelTrunc.slice(0, -1);
+      }
+      if (labelTrunc !== e.label) labelTrunc = labelTrunc.slice(0,-1) + "…";
+      ctx.fillText(labelTrunc, x, cy+9);
+
+      roundRect(ctx, x+labelW, cy, trackW, 9, 3); ctx.fillStyle = COL.lineSoft; ctx.fill();
+      const fillW = Math.max(2, (e.value/100)*trackW);
+      roundRect(ctx, x+labelW, cy, fillW, 9, 3); ctx.fillStyle = color; ctx.fill();
+
+      ctx.fillStyle = COL.ink;
+      ctx.font = "700 11px 'JetBrains Mono', monospace";
+      ctx.textAlign = "right";
+      ctx.fillText(e.value.toFixed(1)+"%", x+w, cy+9);
+      ctx.textAlign = "left";
+      cy += 30;
+    });
+  }
+
+  function drawSimpleBarsCanvas(ctx, x, y, w, entries, color, COL){
+    if (entries.length === 0){
+      ctx.fillStyle = COL.inkFaint;
+      ctx.font = "400 11px 'Segoe UI', Arial, sans-serif";
+      ctx.fillText("Sem dados.", x, y+10);
+      return;
+    }
+    const max = Math.max(...entries.map(e=>e.value), 1);
+    const labelW = 150;
+    const valueW = 78;
+    const trackW = w - labelW - valueW;
+    let cy = y;
+    entries.forEach(e => {
+      ctx.fillStyle = COL.inkDim;
+      ctx.font = "500 10.5px 'Segoe UI', Arial, sans-serif";
+      let labelTrunc = e.label;
+      while (ctx.measureText(labelTrunc).width > labelW - 8 && labelTrunc.length > 3){
+        labelTrunc = labelTrunc.slice(0, -1);
+      }
+      if (labelTrunc !== e.label) labelTrunc = labelTrunc.slice(0,-1) + "…";
+      ctx.fillText(labelTrunc, x, cy+8);
+
+      roundRect(ctx, x+labelW, cy, trackW, 8, 3); ctx.fillStyle = COL.lineSoft; ctx.fill();
+      const fillW = Math.max(2, (e.value/max)*trackW);
+      roundRect(ctx, x+labelW, cy, fillW, 8, 3); ctx.fillStyle = color; ctx.fill();
+
+      ctx.fillStyle = COL.ink;
+      ctx.font = "700 10.5px 'JetBrains Mono', monospace";
+      ctx.textAlign = "right";
+      ctx.fillText(e.value.toLocaleString("pt-BR") + (e.unidade ? " " + e.unidade : ""), x+w, cy+8);
+      ctx.textAlign = "left";
+      cy += 26;
+    });
+  }
+
+  document.getElementById("btnGerarImagemAjustes").addEventListener("click", gerarImagemAcuracidade);
 
 })();
 </script>
